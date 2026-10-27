@@ -109,9 +109,11 @@ class Hardware:
         m.iff1 = m.iff2 = interrupts
         data = struct.pack("<H", 0x5b80) + b"".join(struct.pack("<H", arg) for arg in reversed(args))
         m.memory[m.sp:m.sp+len(data)] = data
+        self.last_cycles=0
         for attempt in range(20000):
             m.ticks_to_stop = 1000000
             events = m.run()
+            self.last_cycles+=1000000-m.ticks_to_stop
             if events & m._BREAKPOINT_HIT:
                 if m.pc == self.syms["_keyboard_main"]:
                     m.pc = self.word(m.sp); m.sp += 2; m.hl = 0
@@ -189,3 +191,23 @@ for kind in (3, 5):
                 image.save(ROOT/f'build-HGFX{kind}'/'simulated-demo.png')
         print(f"PASS: HGFX{kind} linked Z80 / {'MB03+' if mb else 'eLeMeNt'}: "
               f"ROM/IRQ restoration, geometry, RGB palette, text, {h.transactions} VRAM transactions")
+
+# Real local splash/protocol path: demo alone missed the expensive clear.
+h = Hardware(3,False)
+h.call('_hgfx_start')
+h.call('_screen_clear')
+assert h.last_cycles < 3000000, h.last_cycles
+print('PASS: HGFX3 full clear cycles:',h.last_cycles)
+h.call('_terminal_init')
+splash_count=len(re.findall(r'0[xX][0-9a-fA-F]+',(ROOT/'src/spectrum/splash.h').read_text()))
+h.call('_ShowPLATO',h.syms['_splash'],splash_count)
+assert any(h.frame)
+h.call('_terminal_ready'); h.call('_terminal_initial_position')
+for x1,x2 in ((0,0),(0,511),(1,6),(3,13),(7,8),(8,23),(-5,12),(500,520)):
+    h.call('_screen_clear')
+    h.m.memory[0x5e00:0x5e08]=struct.pack('<hhhh',x1,40,x2,44)
+    h.m.memory[h.syms['_CurMode']:h.syms['_CurMode']+2]=b'\0\0'
+    h.call('_screen_block_draw',0x5e00,0x5e04)
+    for x in range(512):
+        assert h.point(x,42)==int(max(0,x1)<=x<=min(511,x2)),(x1,x2,x)
+print('PASS: HGFX3 production splash/ready and planar spans/clipping')

@@ -221,12 +221,31 @@ static void pixel(int x, int y, unsigned char value)
 
 static void span(int x1, int x2, int y, unsigned char value)
 {
+#if defined(__HGFX3__) && !defined(HGFX_HOST_TEST)
+    unsigned int first, last;
+    unsigned char left, right;
+#else
     int x;
+#endif
     if ((unsigned int)y > 511 || x2 < 0 || x1 > 511) return;
     if (x1 < 0) x1 = 0;
     if (x2 > 511) x2 = 511;
     hgfx_map(Y_ORIGIN + scaled_y(y));
+#if defined(__HGFX3__) && !defined(HGFX_HOST_TEST)
+    REGS[3] = value;
+    first = x1 >> 3;
+    last = x2 >> 3;
+    left = 255 >> (x1 & 7);
+    right = 255 << (7 - (x2 & 7));
+    if (first == last) PIXELS[first] = left & right;
+    else {
+        PIXELS[first] = left;
+        if (last > first+1) memset((void *)(PIXELS+first+1), 255, last-first-1);
+        PIXELS[last] = right;
+    }
+#else
     for (x = x1 + X_ORIGIN; x <= x2 + X_ORIGIN; ++x) row_set(x, value);
+#endif
     hgfx_unmap();
 }
 
@@ -238,7 +257,18 @@ void screen_clear(void)
 {
     int y;
     palette_reset();
+#if defined(__HGFX3__) && !defined(HGFX_HOST_TEST)
+    /* Full physical rows, same proven INK path as hgfx_start/probe.
+     * Per-pixel clearing costs hundreds of millions of cycles. */
+    REGS[3] = paper;
+    for (y = 0; y < HGFX_HEIGHT; ++y) {
+        hgfx_map(y);
+        memset((void *)PIXELS, 255, 64);
+        hgfx_unmap();
+    }
+#else
     for (y = 0; y < 512; ++y) span(0, 511, y, paper);
+#endif
 }
 
 void screen_foreground(padRGB *rgb) { fg = *rgb; ink = colour(rgb); }

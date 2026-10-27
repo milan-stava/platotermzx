@@ -182,3 +182,21 @@ temporary chunky mapping and is not yet hardware-verified.
 Linked Z80 tests model planar writes and verify geometry, palette, text,
 erase, demo, readback mapping and exit. Host renderer tests pass. These
 checks do not replace the integrated real-machine test.
+
+## HGFX3 alpha 9: remove per-pixel screen-clear delay
+
+`runable/PLATOTerm_MB_EL_HGFX3_alpha9.tap` replaces HGFX3 screen_clear's
+512x512 pixel loop with 384 physical rows of 64 planar bitmap bytes, using
+the same INK write path proven by the standalone probe. Rectangle spans
+now write whole bytes with edge masks as well. Palette and erase semantics
+are preserved. HGFX5 is unchanged.
+
+Measured linked Z80 cycles per full clear fell from 276,667,550 to 888,384:
+about 13.83 seconds to 0.044 seconds at 20 MHz, excluding contention/waits.
+This is a local renderer measurement, not a network speed measurement.
+The actual 1282-byte local splash through ShowPLATO/ready renders in the
+simulator; before this change its repeated clears caused long blank waits.
+Tests now cover that production splash path and a clear-cycle bound, plus
+rectangle byte boundaries and clipping. Network/exit regression tests pass.
+The reported black screen on real IRATA still needs hardware confirmation.
+Keep graphics fill off initially as in alpha 8.
