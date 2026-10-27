@@ -171,3 +171,34 @@ Tests cover both payload header formats, binary data, drain after CLOSED,
 four-block backlog with one query, new arrivals, reconnect cache reset,
 framing errors and timeouts. Host sanitizer tests and linked Z80 network
 tests for both platforms pass. Existing HGFX binaries are unchanged.
+
+## Alpha 6: quit to BASIC and clean server startup
+
+All three targets now have alpha 6 TAPs in `runable/`. In an active
+terminal session, press CAPS SHIFT + SYMBOL SHIFT, release, then Q to quit
+to BASIC. This local shortcut works in TTY and PLATO mode. It discards
+pending output, tries CIPCLOSE for at most 50 ROM frames (about one second
+at 50 Hz), switches HGFX back to ULA, clears the screen and restores BASIC
+keyboard flags and normal attributes. The runtime restores BASIC's entry
+stack. The builds now preserve the caller stack instead of resetting it
+to a fixed address that could overwrite BASIC return data. Raw setup
+input prompts do not use this terminal shortcut.
+
+After the local splash and successful connection, InitTTY resets parser
+and cursor state before the first server data. Previously splash state
+was left active. This addresses a concrete startup state bug; the reported
+three-second pause and isolated A still need hardware rechecking. No fixed
+three-second post-connect delay is present in this code.
+
+HGFX alpha 6 includes the alpha 5 passive receive backlog optimization.
+The HGFX drawing backend itself is unchanged. Ordinary ZX retains alpha 4
+text acceleration and the startup sound fix.
+
+Tests: all TAP/bounds checks pass; host ESP sanitizer tests pass, including
+close with missing ESP; linked Z80 network tests pass for all three targets
+on both platforms. `tests/test_exit_z80.py` runs CRT entry, real main
+startup with UI/transport stubs, EXTEND/Q dispatch, real cleanup and runtime
+return to a simulated BASIC caller, for all targets with responding and
+silent ESP. It verifies parser initialization, original stack return,
+IY, restored flags/attributes and HGFX mode disable. Real hardware testing
+is pending.

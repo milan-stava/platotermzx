@@ -5,7 +5,7 @@ TARGET = $(BUILD_DIR)/platoterm-mbel
 SRCS = $(wildcard src/common/*.c) $(wildcard src/spectrum/*.c) \
        $(wildcard src/spectrum/mbel/*.c)
 CFLAGS = +zx -D__SPECTRUM__ -D__MBEL__ -O2 -I./src/include \
-         -pragma-define:REGISTER_SP=32767
+         -pragma-define:REGISTER_SP=-1
 LDFLAGS = -lndos -lm -create-app -m \
           -Cz--screen -Czsrc/spectrum/rs232/ptzx-loading-splash-1.scr
 

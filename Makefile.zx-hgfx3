@@ -5,7 +5,7 @@ SRCS = $(filter-out src/common/screen.c,$(wildcard src/common/*.c)) \
        $(filter-out src/spectrum/font.c src/spectrum/scale.c src/spectrum/screen.c,\
          $(wildcard src/spectrum/*.c)) $(wildcard src/spectrum/mbel/*.c)
 CFLAGS = +zx -D__SPECTRUM__ -D__MBEL__ -D__HGFX__ -D__HGFX3__ -O2 -I./src/include \
-         -zorg=25600 -pragma-define:REGISTER_SP=25599
+         -zorg=25600 -pragma-define:REGISTER_SP=-1
 LDFLAGS = -lndos -create-app -m \
           -Cz--screen -Czsrc/spectrum/rs232/ptzx-loading-splash-1.scr
 

@@ -257,6 +257,17 @@ int esp_open(const char *host)
     return issue(command);
 }
 
+void esp_close(void)
+{
+    /* Exit must finish even if the ESP no longer responds (one second). */
+    timeout_frames = 50;
+    esp_error = 0;
+    issue("AT+CIPCLOSE\r\n");
+    timeout_frames = 500;
+    available = 0;
+    esp_closed = 1;
+}
+
 int esp_send(const unsigned char *data, unsigned int count)
 {
     char *p;

@@ -21,9 +21,15 @@
 #include "sound.h"	//Added sound for Keyboard and ready beep
 
 unsigned char already_started=0;
+#ifdef __MBEL__
+unsigned char mbel_saved_flags;
+#endif
 
 void main(void)
 {
+#ifdef __MBEL__
+  mbel_saved_flags=bpeek(0x5C3B);
+#endif
   bpoke(0x5C3B, bpeek(0x5C3B) | 0x8); /*Alistair's workaround to autoboot key mode issue */
   char c; 
   zx_border(INK_BLACK);  //Tidy up the borders on start up
@@ -80,6 +86,12 @@ void main(void)
   ShowPLATO(splash,sizeof(splash));
   terminal_ready();
   terminal_initial_position();
+#endif
+
+#ifdef __MBEL__
+  /* The local splash uses the PLATO parser. A new server connection must
+   * start in TTY mode with no partial splash command or cursor state. */
+  InitTTY();
 #endif
 
 #if !defined(NO_BIT) && !defined(__MBEL__)

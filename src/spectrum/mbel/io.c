@@ -2,6 +2,7 @@
 #include <conio.h>
 #include <input.h>
 #include <string.h>
+#include <spectrum.h>
 #include "../../include/io.h"
 #include "../../include/protocol.h"
 #include "../../include/keyboard.h"
@@ -19,6 +20,28 @@ static char host[64];
 static char ssid[33];
 static char password[64];
 char io_initialized;
+extern unsigned char mbel_saved_flags;
+
+void io_done(void)
+{
+    if (io_initialized) esp_close();
+    io_initialized = 0;
+    txcount = 0;
+#ifdef __HGFX__
+    hgfx_suspend();
+#endif
+    textcolor(BLACK);
+    textbackground(WHITE);
+    clrscr();
+    zx_border(7);
+    /* Restore BASIC keyboard flags and normal permanent attributes. */
+    bpoke(0x5c3b, mbel_saved_flags);
+    bpoke(0x5c48, 56);
+    bpoke(0x5c8d, 56);
+    bpoke(0x5c8e, 0);
+    bpoke(0x5c8f, 56);
+    bpoke(0x5c90, 0);
+}
 
 /* Bounded input; never write credentials or host names to a disk. */
 static void input(char *s, unsigned char capacity, unsigned char secret)

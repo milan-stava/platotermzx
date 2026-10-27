@@ -60,6 +60,9 @@ void help_keys(void)
   gotoxy(1,19);
   cprintf(" Available keys: ANS  BACK  COPY  DATA  EDIT  FONT  DIVIDE     ");
   cprintf(" HELP  LAB  MICRO  NEXT  SQUARE  STOP  SUB  SUPER  TERM  ASSIGN");
+#ifdef __MBEL__
+  cprintf(" EXTEND Q - quit to BASIC");
+#endif
 #endif  
 }
 

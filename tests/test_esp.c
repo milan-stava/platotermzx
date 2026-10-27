@@ -139,6 +139,13 @@ int main(void)
     reset(0, 0);
     assert(esp_join("A,\"B", "") && !esp_error);
     assert(!strcmp(command, "AT+CWJAP_CUR=\"A\\,\\\"B\",\"\"\r\n"));
+    reset(0, 0);
+    esp_close();
+    assert(esp_closed && head == tail);
+    reset(0, 0); stall = 1;
+    esp_close();
+    assert(esp_closed && esp_error == ESP_TIMEOUT);
+    assert(ticks / 16 < 60); /* Close remains bounded without a live ESP. */
     puts("ESP tests passed: binary framing, both headers, close/drain, bounds, errors, timeout/wrap, send, credentials.");
     return 0;
 }

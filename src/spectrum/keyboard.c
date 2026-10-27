@@ -11,6 +11,9 @@
 
 #include <conio.h>
 #include <spectrum.h>
+#ifdef __MBEL__
+#include <stdlib.h>
+#endif
 #include "../include/key.h"
 #include "../include/keyboard.h"
 #include "../include/screen.h"
@@ -94,6 +97,14 @@ void keyboard_main(void)
         zx_border(INK_GREEN);
         is_extend=1;
       }
+#ifdef __MBEL__
+      else if (is_extend && (ch=='q' || ch=='Q'))
+      {
+        is_extend=0;
+        io_done();
+        exit(0);
+      }
+#endif
       else if (TTY)
       {
         keyboard_out_tty(ch);	// *IRQ-OFF  (SENDING DATA)

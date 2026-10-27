@@ -142,3 +142,13 @@ video timing or prove FPGA behaviour/performance on real hardware.
   — retained with provenance in `vendor/plato_font8x16.h`.
 - Original terminal: Thomas Cherryhomes / Steve Peltz. Shared Wi-Fi BIOS supplied
   by Hood, with its original source and credits preserved.
+
+## Alpha 6 update
+
+Use `runable/PLATOTerm_MB_EL_HGFX3_alpha6.tap` (512×384, 16 colours)
+or `runable/PLATOTerm_MB_EL_HGFX5_alpha6.tap` (720×576, 4 colours).
+Both retain the offline T demo and now include reduced passive-receive
+command overhead, a fresh TTY parser after connection and EXTEND then Q
+to close the active terminal session and return to BASIC. See
+[README_MB_EL.md](README_MB_EL.md#alpha-6-quit-to-basic-and-clean-server-startup)
+for behavior and validation limits. Graphics routines are unchanged.
