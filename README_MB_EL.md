@@ -214,3 +214,10 @@ sound fix and receive backlog optimization remain included. The Z80 startup
 regression test now verifies the restored initial cursor/state; quit tests
 pass for all three targets with responding and silent ESP. All TAP bounds
 and checksum checks pass.
+
+## HGFX3 alpha 8
+
+The new HGFX3 TAP uses planar writes based on the standalone probe confirmed
+on the real eLeMeNt. See README_HGFX.md. Ordinary ZX alpha 7 and HGFX5 alpha 7
+are unchanged. Test HGFX3 with graphics fill disabled initially; readback
+for flood fill/printer remains unverified on hardware.

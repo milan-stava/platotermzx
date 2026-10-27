@@ -22,6 +22,10 @@ extern unsigned char test_registers[24], test_palette[HGFX_COLOURS*3], test_row[
 #define REGS test_registers
 #define PALETTE test_palette
 #define PIXELS test_row
+#elif defined(__HGFX3__)
+#define REGS ((volatile unsigned char *)0x0000)
+#define PALETTE ((volatile unsigned char *)0x2000)
+#define PIXELS ((volatile unsigned char *)0x4000)
 #else
 #define REGS ((volatile unsigned char *)0x5800)
 #define PALETTE ((volatile unsigned char *)0x5900)
@@ -46,13 +50,30 @@ static unsigned int seed_count;
 static void configure(void)
 {
     unsigned char i;
+#ifdef __HGFX3__
+    hgfx_reg(0x0520); /* SARAH/probe: linear, no ZX transparency */
+#else
     hgfx_reg(0x0720); /* linear, no ZX transparency, enable register writes */
+#endif
     hgfx_reg(0x4021); /* planar window stays away from code/stack */
+#ifdef __HGFX3__
+    hgfx_reg(0x0022); /* ROM writes: no ULA attribute/register collision */
+    hgfx_reg(0x2023);
+#else
     hgfx_reg(0x5822);
     hgfx_reg(0x5923);
+#endif
+#ifdef __HGFX3__
+    hgfx_reg(0x0002); /* Exact BGR/video baseline verified by the probe. */
+#else
     hgfx_reg((hgfx_getreg(2) & 0xf9) * 256 + 2); /* explicit BGR order */
+#endif
     for (i = 0; i < 24; ++i) REGS[i] = 0;
+#ifdef __HGFX3__
+    REGS[4] = 15;
+#else
     REGS[4] = 255;
+#endif
 }
 
 static void palette_write(unsigned char slot)
@@ -99,7 +120,9 @@ void hgfx_start(void)
 {
     unsigned int i;
     /* Same device choice as the shared BIOS: external MB if detected. */
+#ifndef __HGFX3__
     hgfx_select_device();
+#endif
     configure();
     hgfx_reg((HGFX_MODE << 8) | 1);
     hgfx_active = 1;
@@ -107,7 +130,12 @@ void hgfx_start(void)
     /* Clear side/top margins as well as the PLATO canvas. */
     for (i = 0; i < HGFX_HEIGHT; ++i) {
         hgfx_map(i);
+#if defined(__HGFX3__) && !defined(HGFX_HOST_TEST)
+        REGS[3] = 0;
+        memset((void *)PIXELS, 255, 64);
+#else
         memset((void *)PIXELS, 0, HGFX_ROW_BYTES);
+#endif
         hgfx_unmap();
     }
 }
@@ -115,7 +143,12 @@ void hgfx_start(void)
 void hgfx_suspend(void)
 {
     if (!hgfx_active) return;
-    hgfx_reg(0x8720); /* console writes must not modify HGFX regs/palette */
+#ifdef __HGFX3__
+    hgfx_reg(0x8520);
+#else
+    hgfx_reg(0x8720);
+#endif
+    /* console writes must not modify HGFX regs/palette */
     hgfx_reg(0x0001);
 }
 
@@ -132,7 +165,11 @@ void hgfx_resume(void)
 static unsigned char row_get(unsigned int x)
 {
 #ifdef __HGFX3__
+#ifdef HGFX_HOST_TEST
     return (PIXELS[x >> 1] >> (4 - ((x & 1) << 2))) & 15;
+#else
+    return (hgfx_raw_read(x >> 1) >> (4 - ((x & 1) << 2))) & 15;
+#endif
 #else
     return (PIXELS[x >> 2] >> (6 - ((x & 3) << 1))) & 3;
 #endif
@@ -140,6 +177,11 @@ static unsigned char row_get(unsigned int x)
 
 static void row_set(unsigned int x, unsigned char value)
 {
+#if defined(__HGFX3__) && !defined(HGFX_HOST_TEST)
+    /* INK replaces selected bitplanes for each set bit in the byte. */
+    REGS[3] = value;
+    PIXELS[x >> 3] = 128 >> (x & 7);
+#else
 #ifdef __HGFX3__
     unsigned char shift = 4 - ((x & 1) << 2);
     unsigned int address = x >> 1;
@@ -148,6 +190,7 @@ static void row_set(unsigned int x, unsigned char value)
     unsigned int address = x >> 2;
 #endif
     PIXELS[address] = (PIXELS[address] & ~((HGFX_COLOURS-1) << shift)) | (value << shift);
+#endif
 }
 
 static unsigned int scaled_y(int y)
@@ -395,7 +438,11 @@ void hgfx_hardcopy(void)
             /* Disable planar writes while populating the ULA bitmap. */
             hgfx_reg(0x8720);
             *((unsigned char *)(address+x)) = bits;
+#ifdef __HGFX3__
+            hgfx_reg(0x0520);
+#else
             hgfx_reg(0x0720);
+#endif
         }
     }
     hgfx_suspend();

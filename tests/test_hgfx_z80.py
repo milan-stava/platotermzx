@@ -35,7 +35,7 @@ class Hardware:
         origin = self.syms["CRT_ORG_CODE"]
         m.memory[origin:origin+len(image)] = image
         m.mark_addrs(0, 0x4000, m.READ_MARK | m.WRITE_MARK)
-        m.mark_addrs(0x5800, 0x200, m.WRITE_MARK)
+        m.mark_addrs(0x4000, 0x2000, m.WRITE_MARK)
         m.set_read_callback(self.read)
         m.set_write_callback(self.write)
         m.set_input_callback(self.input)
@@ -49,19 +49,32 @@ class Hardware:
     def read(self, address):
         if address < 0x4000 and self.mapped:
             assert not self.m.iff1, "interrupts enabled with ROM paged out"
-            y = self.word(0x580b)
+            y = self.word(0x000b if self.kind == 3 else 0x580b)
             return self.frame[y*self.stride+address]
         return self.m.memory[address]
 
     def write(self, address, value):
         if address < 0x4000 and self.mapped:
             assert not self.m.iff1
-            y = self.word(0x5807)
+            y = self.word(0x0007 if self.kind == 3 else 0x5807)
             self.frame[y*self.stride+address] = value
         else:
             self.m.memory[address] = value
-            if 0x5900 <= address < 0x5900+len(self.palette) and not (self.regs[0x20] & 128):
-                self.palette[address-0x5900] = value
+            base = 0x2000 if self.kind == 3 else 0x5900
+            if base <= address < base+len(self.palette) and not (self.regs[0x20] & 128):
+                self.palette[address-base] = value
+            if self.kind == 3 and self.regs[1] == 5 and not (self.regs[0x20] & 128) and 0x4000 <= address < 0x6000:
+                y = self.word(7) + (address-0x4000)//64
+                if y < self.height:
+                    x = ((address-0x4000)%64)*8
+                    colour,mask = self.m.memory[3],self.m.memory[4]&15
+                    for bit in range(8):
+                        if value & (128>>bit):
+                            a=y*self.stride+(x+bit)//2
+                            shift=4-(((x+bit)&1)*4)
+                            old=(self.frame[a]>>shift)&15
+                            new=(old&~mask)|(colour&mask)
+                            self.frame[a]=(self.frame[a]&~(15<<shift))|(new<<shift)
 
     def input(self, port):
         if port == 0x773b:
@@ -124,11 +137,17 @@ for kind in (3, 5):
         h = Hardware(kind, mb)
         h.call("_hgfx_start")
         assert h.regs[1] == (5 if kind == 3 else 7)
-        assert h.regs[0] == (0 if mb else 1)
+        assert h.regs[0] == (0 if kind == 3 or mb else 1)
         h.m.memory[0x5e00:0x5e08] = struct.pack("<hhhh", 0,0,511,511)
         h.call("_screen_dot_draw",0x5e00,interrupts=False)
         h.call("_screen_dot_draw",0x5e04)
         assert h.point(0,0) == h.point(511,511) == 1, (kind,mb,h.point(0,0),h.point(511,511),h.transactions,list(h.frame[:4]),h.regs[0x20])
+        if kind == 3:
+            # Readback uses chunky access only; normal rendering uses none.
+            before_read = bytes(h.frame)
+            h.call('_hgfx_map',hl=383)
+            assert h.call('_hgfx_raw_read',hl=0)&255 == 16
+            assert bytes(h.frame)==before_read
         h.call("_screen_clear")
         h.call("_screen_line_draw",0x5e00,0x5e04)
         assert all(h.point(i,i) == 1 for i in range(512))

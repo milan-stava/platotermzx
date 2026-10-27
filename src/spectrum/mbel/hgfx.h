@@ -34,13 +34,17 @@ void hgfx_resume(void);
 void hgfx_hardcopy(void);
 void hgfx_load_char(padWord number, charData columns);
 
-/* One physical scanline at CPU address 0. ROM is restored before unlock
- * returns. The implementation preserves the caller's interrupt state.
+/* Select a physical scanline. HGFX3 writes through the planar window at
+ * 0x4000 with ROM-based registers; HGFX5 maps chunky RAM over ROM.
+ * HGFX3 readback still uses a temporary chunky mapping (hardware unverified).
  */
 void hgfx_map(unsigned int y) __z88dk_fastcall;
 void hgfx_unmap(void);
 void hgfx_reg(unsigned int value) __z88dk_fastcall;
 unsigned int hgfx_getreg(unsigned int reg) __z88dk_fastcall;
 void hgfx_select_device(void);
+#ifdef __HGFX3__
+unsigned char hgfx_raw_read(unsigned int address) __z88dk_fastcall;
+#endif
 
 #endif

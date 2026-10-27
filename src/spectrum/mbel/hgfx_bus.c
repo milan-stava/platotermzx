@@ -1,6 +1,9 @@
 #ifdef __HGFX__
 #include "hgfx.h"
 
+#ifdef __HGFX3__
+static unsigned int planar_y;
+#endif
 static unsigned char saved_zone, saved_layout, saved_ultimate, saved_iff;
 
 void hgfx_select_device(void) __naked
@@ -45,7 +48,7 @@ unsigned int hgfx_getreg(unsigned int reg) __z88dk_fastcall __naked
     __endasm;
 }
 
-void hgfx_map(unsigned int y) __z88dk_fastcall __naked
+static void chunky_map(unsigned int y) __z88dk_fastcall __naked
 {
     __asm
         ld a,i
@@ -58,8 +61,13 @@ void hgfx_map(unsigned int y) __z88dk_fastcall __naked
     hgfx_iff_save:
         ld (_saved_iff),a
         ; Use identical row origins for reads and writes.
+#ifdef __HGFX3__
+        ld (0x0007),hl
+        ld (0x000b),hl
+#else
         ld (0x5807),hl
         ld (0x580b),hl
+#endif
         in a,(0x73)
         ld (_saved_zone),a
         xor a
@@ -80,7 +88,7 @@ void hgfx_map(unsigned int y) __z88dk_fastcall __naked
     __endasm;
 }
 
-void hgfx_unmap(void) __naked
+static void chunky_unmap(void) __naked
 {
     __asm
         ld a,(_saved_layout)
@@ -100,4 +108,27 @@ void hgfx_unmap(void) __naked
         ret
     __endasm;
 }
+
+#ifdef __HGFX3__
+void hgfx_map(unsigned int y) __z88dk_fastcall
+{
+    volatile unsigned char *r=(volatile unsigned char *)0;
+    planar_y=y;
+    r[7]=y;
+    r[8]=y >> 8;
+}
+void hgfx_unmap(void) {}
+
+unsigned char hgfx_raw_read(unsigned int address) __z88dk_fastcall
+{
+    unsigned char value;
+    chunky_map(planar_y);
+    value=((volatile unsigned char *)0)[address];
+    chunky_unmap();
+    return value;
+}
+#else
+void hgfx_map(unsigned int y) __z88dk_fastcall { chunky_map(y); }
+void hgfx_unmap(void) { chunky_unmap(); }
+#endif
 #endif

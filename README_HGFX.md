@@ -158,3 +158,27 @@ for behavior and validation limits. Graphics routines are unchanged.
 The HGFX3/HGFX5 alpha 7 TAPs revert alpha 6's unsuccessful post-connect
 parser reset. BASIC exit and receive optimization remain. The reported
 startup A/pause is still unresolved; see README_MB_EL.md.
+
+## HGFX3 alpha 8: planar renderer
+
+Use `runable/PLATOTerm_MB_EL_HGFX3_alpha8.tap`. This is the first integrated
+renderer using the planar approach confirmed on Hood's real eLeMeNt with
+core 2026-10-10 by `HGFX3_PLANAR_probe_A1.tap` (sixteen colour bands).
+Integrated PLATOTerm behavior still needs hardware testing. HGFX5 binaries
+are unchanged and remain unvalidated on that hardware.
+
+HGFX3 now matches the successful probe: BGR baseline g_zxi_002=0, settings
+g_zxi_020=5, planar window 0x4000, ROM memory registers 0x0000, palette
+0x2000. Normal text, points, lines, rectangles and clear use planar INK
+writes with mask 15 and row OffsetY. They do not map chunky RAM over ROM.
+This also removes HGFX register/palette storage from ULA attributes.
+Suspend uses settings 0x85 before mode 0 for ordinary setup/help/exit.
+
+First test the offline T demo, then return to connection setup, choose
+`n` for graphics fill, and connect. EXTEND/Q returns to BASIC. The existing
+flood fill and printer sampling need pixel readback; this still uses a
+temporary chunky mapping and is not yet hardware-verified.
+
+Linked Z80 tests model planar writes and verify geometry, palette, text,
+erase, demo, readback mapping and exit. Host renderer tests pass. These
+checks do not replace the integrated real-machine test.

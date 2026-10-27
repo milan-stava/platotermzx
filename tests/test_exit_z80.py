@@ -71,5 +71,5 @@ for target,build in [('platoterm-mbel','build-MBEL'),('platoterm-hgfx3','build-H
   assert commands==[b'AT+CIPCLOSE\r\n']
   assert m.memory[syms['_io_initialized']]==0
   assert m.memory[0x5c3b]==0x80 and m.memory[0x5c8d]==56
-  if '_hgfx_active' in syms:assert regs[1]==0 and regs[0x20]==0x87
+  if '_hgfx_active' in syms:assert regs[1]==0 and regs[0x20]==(0x85 if 'hgfx3' in target else 0x87)
   print('PASS:',target,'EXTEND/Q returns to BASIC caller;', 'silent ESP timeout' if silent else 'socket closed')

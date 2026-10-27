@@ -56,7 +56,7 @@ int main(void)
     unsigned int i, n;
     charData glyph;
     hgfx_start();
-    assert(registers[1] == HGFX_MODE && registers[0x20] == 7);
+    assert(registers[1] == HGFX_MODE && registers[0x20] == (HGFX_MODE==5 ? 5 : 7));
     CurMode = ModeWrite;
     screen_dot_draw(&a); screen_dot_draw(&b);
     assert(get_pixel(0,0) == 1 && get_pixel(511,511) == 1);
