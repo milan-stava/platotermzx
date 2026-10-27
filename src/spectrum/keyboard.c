@@ -18,6 +18,9 @@
 #include "../include/io.h"
 #include "../include/plato_key.h"
 #include "../include/help.h"
+#ifdef __HGFX__
+#include "mbel/hgfx.h"
+#endif
 
 #include "sound.h"	//Added sound
 
@@ -98,12 +101,22 @@ void keyboard_main(void)
       else if (is_extend==1 && ch==0x30)
       {
         is_extend=0;
+#ifdef __HGFX__
+        hgfx_suspend();
+#endif
         help_run();
+#ifdef __HGFX__
+        hgfx_resume();
+#endif
       }
       else if (is_extend==1 && ch==0x39)
       {
         zx_border(INK_MAGENTA);
+#ifdef __HGFX__
+        hgfx_hardcopy();
+#else
         zx_hardcopy();
+#endif
         zx_border(INK_BLACK);
         is_extend=0;
       }

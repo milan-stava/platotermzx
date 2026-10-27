@@ -109,6 +109,10 @@ These checks do not establish real-hardware performance or complete UI parity.
 
 ## Later: HGFX
 
+**Update: both HGFX variants are now implemented as alpha 2 builds.** See
+[HGFX instructions and test status](README_HGFX.md). The text below records the
+original comparison that led to providing both modes.
+
 Extra graphics are a separate follow-up, after the ordinary ZX port is verified.
 IRATA advertises 24-bit colour on supported terminals; the current ZX renderer
 maps a small set of basic colours. PLATO uses a 512×512 coordinate space.

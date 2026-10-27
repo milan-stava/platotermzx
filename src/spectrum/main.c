@@ -14,6 +14,9 @@
 
 #include "../include/io.h"
 #include "../include/keyboard.h"
+#ifdef __HGFX__
+#include "mbel/hgfx.h"
+#endif
 
 #include "sound.h"	//Added sound for Keyboard and ready beep
 
@@ -25,10 +28,27 @@ void main(void)
   char c; 
   zx_border(INK_BLACK);  //Tidy up the borders on start up
   screen_init();
+#ifndef __HGFX__
   terminal_init();
   ShowPLATO(splash,sizeof(splash));
   terminal_ready();
   terminal_initial_position();
+#else
+#ifdef __HGFX3__
+  cprintf("PLATOTerm - HGFX 3 / 512x384\r\n");
+#else
+  cprintf("PLATOTerm - HGFX 5 / 720x576\r\n");
+#endif
+  cprintf("T = offline graphics test, ENTER = connect\r\n");
+  c = getch();
+  if (c == 't' || c == 'T') {
+    hgfx_demo();
+    in_WaitForNoKey();
+    getch();
+    hgfx_suspend();
+    screen_init();
+  }
+#endif
   
   help_clear();
   cprintf("Enable graphics fill?(y/n)");
@@ -54,8 +74,20 @@ void main(void)
 #endif
   io_init();
 
+#ifdef __HGFX__
+  hgfx_start();
+  terminal_init();
+  ShowPLATO(splash,sizeof(splash));
+  terminal_ready();
+  terminal_initial_position();
+#endif
+
 #ifndef NO_BIT
+#ifdef __HGFX__
+  screen_beep();
+#else
   bit_play("2A--");  //Ready beep
+#endif
 #endif
 
   for (;;)

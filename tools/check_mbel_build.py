@@ -2,21 +2,24 @@
 from pathlib import Path
 import re
 import struct
+import sys
 
 root = Path(__file__).resolve().parents[1]
-build = root / "build-MBEL"
+build = root / (sys.argv[1] if len(sys.argv) > 1 else "build-MBEL")
+target = sys.argv[2] if len(sys.argv) > 2 else "platoterm-mbel"
 symbols = dict((name, int(value, 16)) for name, value in re.findall(
     r"^(\w+)\s*= \$([0-9A-Fa-f]+)",
-    (build / "platoterm-mbel.map").read_text(), re.M))
+    (build / (target + ".map")).read_text(), re.M))
 end = symbols["__BSS_END_tail"]
 assert end <= 0xff57, f"Resident data overlaps ROM UDG area: {end:#x}"
-image = (build / "platoterm-mbel").read_bytes()
-assert 0x8000 + len(image) <= end
+origin = symbols["CRT_ORG_CODE"]
+image = (build / target).read_bytes()
+assert origin + len(image) <= end
 bios = (root / "src/spectrum/mbel/vendor/WifiBios20_MB_EL.cod").read_bytes()
 assert len(bios) == 544
-offset = symbols["_wifi_bios"] - 0x8000
+offset = symbols["_wifi_bios"] - origin
 assert image[offset:offset + len(bios)] == bios
-tap = (build / "platoterm-mbel.tap").read_bytes()
+tap = (build / (target + ".tap")).read_bytes()
 position, blocks = 0, []
 while position < len(tap):
     length, = struct.unpack_from("<H", tap, position)

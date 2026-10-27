@@ -1,3 +1,5 @@
 /build-MBEL/
+/build-HGFX5/
+/build-HGFX3/
 /tests/test_esp
 *.o

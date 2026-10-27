@@ -8,6 +8,9 @@
 #include "../../include/help.h"
 #include "esp.h"
 #include "uart.h"
+#ifdef __HGFX__
+#include "hgfx.h"
+#endif
 
 static unsigned char rxdata[ESP_CHUNK];
 static unsigned char txdata[256];
@@ -50,6 +53,9 @@ static void join_wifi(void)
 void io_init(void)
 {
     int c;
+#ifdef __HGFX__
+    hgfx_suspend();
+#endif
     if (!host[0]) {
         wifi_uart_init();
         /* MB03+ may have just powered its ESP on. Interrupts stay enabled. */
@@ -70,6 +76,9 @@ void io_init(void)
     }
     help_clear();
     io_initialized = 1;
+#ifdef __HGFX__
+    hgfx_resume();
+#endif
 }
 
 static int flush(void)
@@ -108,9 +117,13 @@ void io_main(void)
     return;
 disconnected:
     io_initialized = 0;
+#ifdef __HGFX__
+    hgfx_suspend();
+#endif
     help_clear();
     cprintf("Connection ended (%u). R=reconnect", esp_error);
     while ((n = getch()) != 'r' && n != 'R');
     io_init();
+    InitTTY();
 }
 #endif

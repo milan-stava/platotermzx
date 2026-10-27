@@ -11,6 +11,9 @@
 #include <string.h>
 #include "../include/terminal.h"
 #include "../include/screen.h"
+#ifdef __HGFX__
+#include "../spectrum/mbel/hgfx.h"
+#endif
 
 #define true 1
 #define false 0
@@ -214,6 +217,7 @@ void terminal_ext_out(padByte value)
 {
 }
 
+#ifndef __HGFX__
 // Temporary PLATO character data, 8x16 matrix
 static unsigned char char_data[]={0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
 				  0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00};
@@ -317,11 +321,18 @@ void terminal_char_load(padWord charnum, charData theChar)
     }
 }
 
+#else
+void terminal_char_load(padWord charnum, charData theChar)
+{
+  hgfx_load_char(charnum, theChar);
+}
+#endif
+
 /**
  * terminal_ready() - Show ready
  */
 void terminal_ready(void)
 {
   TTYLoc.x=TTYLoc.y=0;
-  ShowPLATO("PLATOTerm 1.3 Ready. EXTEND 9 - Print. EXTEND 0 - Help",54);
+  ShowPLATO((padByte *)"PLATOTerm 1.3 Ready. EXTEND 9 - Print. EXTEND 0 - Help",54);
 }

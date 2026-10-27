@@ -1,0 +1,23 @@
+CC = zcc
+BUILD_DIR ?= build-HGFX3
+TARGET = $(BUILD_DIR)/platoterm-hgfx3
+SRCS = $(filter-out src/common/screen.c,$(wildcard src/common/*.c)) \
+       $(filter-out src/spectrum/font.c src/spectrum/scale.c src/spectrum/screen.c,\
+         $(wildcard src/spectrum/*.c)) $(wildcard src/spectrum/mbel/*.c)
+CFLAGS = +zx -D__SPECTRUM__ -D__MBEL__ -D__HGFX__ -D__HGFX3__ -O2 -I./src/include \
+         -zorg=25600 -pragma-define:REGISTER_SP=25599
+LDFLAGS = -lndos -create-app -m \
+          -Cz--screen -Czsrc/spectrum/rs232/ptzx-loading-splash-1.scr
+
+.PHONY: all clean
+all: $(TARGET).tap
+
+$(TARGET).tap: $(SRCS) $(wildcard src/include/*.h) \
+              $(wildcard src/spectrum/mbel/*.h) \
+              $(wildcard src/spectrum/mbel/vendor/*.h) Makefile.zx-hgfx3
+	@mkdir -p $(BUILD_DIR)
+	$(CC) $(CFLAGS) $(SRCS) -o $(TARGET) $(LDFLAGS)
+	python3 tools/check_mbel_build.py $(BUILD_DIR) platoterm-hgfx3
+
+clean:
+	rm -rf $(BUILD_DIR)

@@ -5,13 +5,15 @@ Requires zx==0.13.15 and a completed make -f Makefile.zx-mbel build.
 from collections import deque
 from pathlib import Path
 import re
+import os
 from zx._spectrum import Spectrum, RunEvents
 
 ROOT = Path(__file__).resolve().parents[1]
-BUILD = ROOT / "build-MBEL"
+BUILD = ROOT / os.environ.get("MBEL_BUILD", "build-MBEL")
+TARGET = os.environ.get("MBEL_TARGET", "platoterm-mbel")
 SYMS = dict((name, int(value, 16)) for name, value in re.findall(
     r"^(\w+)\s*= \$([0-9A-Fa-f]+)",
-    (BUILD / "platoterm-mbel.map").read_text(), re.M))
+    (BUILD / (TARGET + ".map")).read_text(), re.M))
 
 
 class UART:
@@ -80,21 +82,21 @@ class Machine(Spectrum):
         self.suppress_interrupts = True
         self.set_on_input_callback(uart.read)
         self.set_on_output_callback(uart.write)
-        self.write(0x8000, (BUILD / "platoterm-mbel").read_bytes(), ram_page=0)
-        self.mark_addrs(0x7000, 1, 1)
+        self.write(SYMS["CRT_ORG_CODE"], (BUILD / TARGET).read_bytes(), ram_page=0)
+        self.mark_addrs(0x5b80, 1, 1)
 
     def call(self, name, *args, hl=0):
         self.ix, self.iy = 0x1234, 0x5c3a
         self.hl = hl
-        self.sp = 0x7ff0 - 2 * len(args)
-        self.write(self.sp, (0x7000).to_bytes(2, "little") + b"".join(
+        self.sp = SYMS["CRT_ORG_CODE"] - 64 - 2 * len(args)
+        self.write(self.sp, (0x5b80).to_bytes(2, "little") + b"".join(
             arg.to_bytes(2, "little") for arg in reversed(args)))
         self.pc = SYMS[name]
         for frame in range(2000):
             self.fetches_limit = 1000000
             events = self._run()
             if events & RunEvents.BREAKPOINT_HIT:
-                assert self.pc == 0x7000, hex(self.pc)
+                assert self.pc == 0x5b80, hex(self.pc)
                 assert (self.ix, self.iy) == (0x1234, 0x5c3a), name
                 return self.hl
             if events & RunEvents.END_OF_FRAME:
@@ -123,17 +125,17 @@ for mb in (False, True):
     assert uart.sent == bytes(range(256))
 
     uart.protocol = True
-    z.write(0x6800, b"IRATA.ONLINE\0")
-    assert z.call("_esp_open", 0x6800) == 1
-    assert z.call("_esp_recv", 0x6800) == 512
-    assert z.read(0x6800, 512) == bytes(range(256)) * 2
+    z.write(0x5e00, b"IRATA.ONLINE\0")
+    assert z.call("_esp_open", 0x5e00) == 1
+    assert z.call("_esp_recv", 0x5e00) == 512
+    assert z.read(0x5e00, 512) == bytes(range(256)) * 2
     uart.new_header = True
     uart.payload = bytes(range(88))
-    assert z.call("_esp_recv", 0x6800) == 88
-    assert z.read(0x6800, 88) == bytes(range(88))
-    assert z.call("_esp_recv", 0x6800) == 0
+    assert z.call("_esp_recv", 0x5e00) == 88
+    assert z.read(0x5e00, 88) == bytes(range(88))
+    assert z.call("_esp_recv", 0x5e00) == 0
     uart.sent.clear()
-    assert z.call("_esp_send", 0x6800, 88) == 1
+    assert z.call("_esp_send", 0x5e00, 88) == 1
     assert uart.sent.endswith(bytes(range(88)))
     assert not uart.rx and not z.read8(SYMS["_esp_error"])
     print("PASS: linked Z80 BIOS relocation, IX/IY, all 256 bytes, busy/overflow, TCP open/send/read on", "MB03+" if mb else "eLeMeNt")
