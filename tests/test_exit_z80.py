@@ -40,7 +40,7 @@ for target,build in [('platoterm-mbel','build-MBEL'),('platoterm-hgfx3','build-H
   m.sp-=2;m.memory[m.sp:m.sp+2]=syms['_main'].to_bytes(2,'little')
   m.pc=syms['_wifi_uart_init'];run_to_break();assert m.pc==syms['_main']
   # Run the real main startup with UI/transport stubs, deliberately leaving
-  # splash parser state dirty. The live receive loop must start in fresh TTY.
+  # splash parser state dirty. Alpha 7 preserves the pre-alpha-6 startup state.
   skips=['_screen_init','_help_clear','cprintf','_ShowPLATO','_io_init']
   if '_hgfx_start' in syms:skips.append('_hgfx_start')
   for n in skips:m.set_breakpoint(syms[n])
@@ -55,8 +55,8 @@ for target,build in [('platoterm-mbel','build-MBEL'),('platoterm-hgfx3','build-H
     m.memory[syms['_TTY']:syms['_TTY']+2]=b'\0\0'
    else:assert m.pc in [syms[n] for n in skips],hex(m.pc)
    m.pc=int.from_bytes(m.memory[m.sp:m.sp+2],'little');m.sp+=2
-  assert m.memory[syms['_TTY']]==1 and m.memory[syms['_FastText']]==1
-  assert bytes(m.memory[syms['_TTYLoc']:syms['_TTYLoc']+4])==b'\0\0\xef\x01'
+  assert m.memory[syms['_TTY']]==0
+  assert bytes(m.memory[syms['_TTYLoc']:syms['_TTYLoc']+4])==b'\0\0\0\x01'
   for n in skips+['_getch','_io_main']:m.clear_breakpoint(syms[n])
   m.memory[syms['_mbel_saved_flags']]=0x80
   m.memory[syms['_io_initialized']]=1

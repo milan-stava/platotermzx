@@ -202,3 +202,15 @@ return to a simulated BASIC caller, for all targets with responding and
 silent ESP. It verifies parser initialization, original stack return,
 IY, restored flags/attributes and HGFX mode disable. Real hardware testing
 is pending.
+
+## Alpha 7: revert unsuccessful startup reset
+
+All three alpha 7 TAPs remove the post-connect InitTTY added in alpha 6.
+Hardware feedback found no improvement to the isolated A/pause and reported
+a changed startup layout. The earlier startup parser/cursor behavior is
+restored; neither the A/pause nor the layout regression is claimed fixed
+without another hardware check. EXTEND/Q BASIC exit, preserved BASIC stack,
+sound fix and receive backlog optimization remain included. The Z80 startup
+regression test now verifies the restored initial cursor/state; quit tests
+pass for all three targets with responding and silent ESP. All TAP bounds
+and checksum checks pass.

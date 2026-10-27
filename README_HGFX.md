@@ -152,3 +152,9 @@ command overhead, a fresh TTY parser after connection and EXTEND then Q
 to close the active terminal session and return to BASIC. See
 [README_MB_EL.md](README_MB_EL.md#alpha-6-quit-to-basic-and-clean-server-startup)
 for behavior and validation limits. Graphics routines are unchanged.
+
+## Alpha 7 update
+
+The HGFX3/HGFX5 alpha 7 TAPs revert alpha 6's unsuccessful post-connect
+parser reset. BASIC exit and receive optimization remain. The reported
+startup A/pause is still unresolved; see README_MB_EL.md.

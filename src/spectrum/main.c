@@ -88,12 +88,6 @@ void main(void)
   terminal_initial_position();
 #endif
 
-#ifdef __MBEL__
-  /* The local splash uses the PLATO parser. A new server connection must
-   * start in TTY mode with no partial splash command or cursor state. */
-  InitTTY();
-#endif
-
 #if !defined(NO_BIT) && !defined(__MBEL__)
 #ifdef __HGFX__
   screen_beep();
