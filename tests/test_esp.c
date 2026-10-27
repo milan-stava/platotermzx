@@ -98,12 +98,28 @@ int main(void)
         assert(esp_recv(data) == 88);
         assert(!memcmp(data, fixture, 88));
         assert(esp_recv(data) == 0);
-        assert(!esp_error && reads == 2 && queries == 3 && head == tail);
+        assert(!esp_error && reads == 2 && queries == 2 && head == tail);
     }
     reset(2, ESP_CHUNK + 88);
     assert(esp_recv(data) == ESP_CHUNK && esp_closed);
     assert(esp_recv(data) == 88);
     assert(esp_recv(data) == 0 && !esp_error);
+    reset(0, ESP_CHUNK * 4);
+    for (i = 0; i < 4; ++i) {
+        assert(esp_recv(data) == ESP_CHUNK);
+        assert(!memcmp(data, fixture, ESP_CHUNK));
+        assert(queries == 1 && reads == i + 1);
+    }
+    /* Data arriving after the snapshot is discovered on the next query. */
+    device_available = 37;
+    assert(esp_recv(data) == 37 && queries == 2);
+    assert(esp_recv(data) == 0 && queries == 3 && head == tail);
+    reset(0, ESP_CHUNK * 2);
+    assert(esp_recv(data) == ESP_CHUNK && queries == 1);
+    /* A new connection discards the previous socket's cached backlog. */
+    device_available = 0;
+    assert(esp_open("IRATA.ONLINE"));
+    assert(esp_recv(data) == 0 && queries == 2 && reads == 1);
     reset(3, ESP_CHUNK);
     assert(esp_recv(data) == -1 && esp_error == ESP_FRAMING);
     for (i = 5; i <= 7; ++i) {

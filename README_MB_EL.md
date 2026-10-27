@@ -156,3 +156,18 @@ alpha 3 linked binary/map before building alpha 4, then run:
 ```sh
 python3 tests/test_zx_text_z80.py /path/to/alpha3.bin /path/to/alpha3.map
 ```
+
+## Alpha 5: reduce passive receive command overhead
+
+`runable/PLATOTerm_MB_EL_alpha5.tap` retains alpha 4 text acceleration and
+alpha 3 sound fixes. It caches the known unread backlog from CIPRECVLEN
+and drains it in 512-byte blocks before querying again. A 2048-byte
+backlog needs five AT commands instead of eight (excluding the final
+empty/new-data query). No baud change or higher end-to-end throughput
+is claimed before hardware measurement. Small responses still need
+a length query and a receive command.
+
+Tests cover both payload header formats, binary data, drain after CLOSED,
+four-block backlog with one query, new arrivals, reconnect cache reset,
+framing errors and timeouts. Host sanitizer tests and linked Z80 network
+tests for both platforms pass. Existing HGFX binaries are unchanged.

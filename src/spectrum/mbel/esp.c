@@ -236,6 +236,7 @@ int esp_open(const char *host)
 {
     char *p;
     esp_error = esp_closed = 0;
+    available = 0;
     if (!probe() || !issue("ATE0\r\n")) return 0;
     /* Closing an absent socket returns ERROR. Both commands are intentional:
      * an earlier application may have left either single or multi mode set.
@@ -272,19 +273,27 @@ int esp_send(const unsigned char *data, unsigned int count)
 
 int esp_recv(unsigned char *data)
 {
-    unsigned int actual = 0, count;
+    unsigned int actual = 0, count, pending;
     char *p;
     if (esp_error) return -1;
-    available = 65535;
-    if (!issue("AT+CIPRECVLEN?\r\n")) return -1;
-    if (available == 65535) { esp_error = ESP_FRAMING; return -1; }
+    /* A length query is a snapshot: bytes not yet consumed remain in the
+     * ESP passive buffer. Drain that known backlog without another query.
+     * Query again once exhausted, so newly arrived bytes are never missed. */
+    if (!available) {
+        available = 65535;
+        if (!issue("AT+CIPRECVLEN?\r\n")) { available = 0; return -1; }
+        if (available == 65535) { available = 0; esp_error = ESP_FRAMING; return -1; }
+    }
     if (!available) return 0;
-    count = available > ESP_CHUNK ? ESP_CHUNK : available;
+    pending = available;
+    available = 0; /* An incomplete/failed transaction must not retain a cache. */
+    count = pending > ESP_CHUNK ? ESP_CHUNK : pending;
     strcpy(command, "AT+CIPRECVDATA=");
     p = decimal(command + strlen(command), count);
     strcpy(p, "\r\n");
     begin();
     if (!write_text(command) || !reply(data, count, &actual, 0)) return -1;
+    if (actual) available = pending - actual;
     return actual;
 }
 #endif
