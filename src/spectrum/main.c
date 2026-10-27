@@ -82,7 +82,7 @@ void main(void)
   terminal_initial_position();
 #endif
 
-#ifndef NO_BIT
+#if !defined(NO_BIT) && !defined(__MBEL__)
 #ifdef __HGFX__
   screen_beep();
 #else

@@ -37,7 +37,12 @@ void screen_init(void)
  */
 void screen_beep(void)
 {
+#ifdef __MBEL__
+  /* Bounded integer parameters: avoid the floating-point frequency wrapper. */
+  bit_beep(30,500);
+#else
   bit_frequency(.2,440);
+#endif
 }
 
 /**

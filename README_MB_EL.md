@@ -123,3 +123,12 @@ monitor output also need checking. A future renderer needs appropriate font
 rendering and colour mapping, rather than just a display-mode switch. The common
 ULA build remains available for both machines; extra-mode hardware support on
 each configuration must be checked separately.
+
+## Alpha 3: startup sound fix
+
+`runable/PLATOTerm_MB_EL_alpha3.tap` removes the blocking startup melody
+reported on hardware in alpha 1/2. Terminal bell uses bounded integer
+parameters instead of floating-point frequency conversion. The compiled
+bell returns in a Z80 execution test; network adapter tests pass on both
+simulated platforms. Real hardware retest is pending. HGFX alpha 2 TAPs
+are unchanged.
