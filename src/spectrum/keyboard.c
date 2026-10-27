@@ -64,7 +64,7 @@ void keyboard_out(unsigned char platoKey)
  */
 void keyboard_out_tty(char ch)
 {
-  if (ch=0x0a)
+  if (ch==0x0a)
     {
       io_send_byte(0x0d);
       io_send_byte(0x0a);

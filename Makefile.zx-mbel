@@ -1,0 +1,23 @@
+# Standalone 48K-address-space TAP for both MB03+ and eLeMeNt ZX.
+CC = zcc
+BUILD_DIR ?= build-MBEL
+TARGET = $(BUILD_DIR)/platoterm-mbel
+SRCS = $(wildcard src/common/*.c) $(wildcard src/spectrum/*.c) \
+       $(wildcard src/spectrum/mbel/*.c)
+CFLAGS = +zx -D__SPECTRUM__ -D__MBEL__ -O2 -I./src/include \
+         -pragma-define:REGISTER_SP=32767
+LDFLAGS = -lndos -lm -create-app -m \
+          -Cz--screen -Czsrc/spectrum/rs232/ptzx-loading-splash-1.scr
+
+.PHONY: all clean
+all: $(TARGET).tap
+
+$(TARGET).tap: $(SRCS) $(wildcard src/include/*.h) \
+              $(wildcard src/spectrum/mbel/*.h) \
+              src/spectrum/mbel/vendor/bios_image.h
+	@mkdir -p $(BUILD_DIR)
+	$(CC) $(CFLAGS) $(SRCS) -o $(TARGET) $(LDFLAGS)
+	python3 tools/check_mbel_build.py
+
+clean:
+	rm -rf $(BUILD_DIR)

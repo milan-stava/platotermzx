@@ -6,6 +6,7 @@
 #include <spectrum.h>
 #include "../include/screen.h"
 #include "../include/protocol.h"
+#include "../include/keyboard.h"
 
 extern unsigned char CharWide;
 extern unsigned char CharHigh;
