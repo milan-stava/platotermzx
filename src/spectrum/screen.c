@@ -24,6 +24,133 @@ extern char enable_fill;
 long foregroundColor=INK_WHITE;
 long backgroundColor=PAPER_BLACK;
 
+#if defined(__MBEL__) && !defined(MBEL_SLOW_TEXT)
+/* FastText only changes set glyph pixels. Merge a whole glyph row instead
+ * of calling the generic graphics and attribute routines for each pixel. */
+static void text_row(unsigned int x, unsigned int y, unsigned char bits,
+                     unsigned char ink) __naked
+{
+#asm
+  EXTERN __zx_console_attr
+  push ix
+  ld ix,0
+  add ix,sp
+  ld h,(ix+6)
+  ld l,0
+  ld a,(ix+10)
+  and 7
+  jr z,mbel_row_shifted
+  ld b,a
+mbel_row_shift:
+  srl h
+  rr l
+  djnz mbel_row_shift
+mbel_row_shifted:
+  ld c,h
+  ld b,l
+  ld a,(ix+8)
+  and 7
+  or 64
+  ld h,a
+  ld a,(ix+8)
+  and 192
+  rrca
+  rrca
+  rrca
+  or h
+  ld h,a
+  ld a,(ix+8)
+  and 56
+  rlca
+  rlca
+  ld l,a
+  ld a,(ix+10)
+  rrca
+  rrca
+  rrca
+  and 31
+  or l
+  ld l,a
+  ld a,(ix+4)
+  or a
+  jr z,mbel_row_erase
+  ld a,c
+  or (hl)
+  ld (hl),a
+  inc hl
+  ld a,b
+  or (hl)
+  ld (hl),a
+  jr mbel_row_attrs
+mbel_row_erase:
+  ld a,c
+  cpl
+  and (hl)
+  ld (hl),a
+  inc hl
+  ld a,b
+  cpl
+  and (hl)
+  ld (hl),a
+mbel_row_attrs:
+  ld a,(ix+8)
+  inc a
+  call mbel_row_attraddr
+  ld a,c
+  and 254
+  jr z,mbel_row_attrnext
+  ld a,(_foregroundColor)
+  ld (hl),a
+mbel_row_attrnext:
+  inc hl
+  ld a,c
+  and 1
+  or b
+  jr z,mbel_row_current
+  ld a,(_foregroundColor)
+  ld (hl),a
+mbel_row_current:
+  ld a,(ix+8)
+  call mbel_row_attraddr
+  ld a,c
+  or a
+  jr z,mbel_row_second
+  ld a,(__zx_console_attr)
+  ld (hl),a
+mbel_row_second:
+  inc hl
+  ld a,b
+  or a
+  jr z,mbel_row_done
+  ld a,(__zx_console_attr)
+  ld (hl),a
+mbel_row_done:
+  pop ix
+  ret
+mbel_row_attraddr:
+  ld e,a
+  and 192
+  rlca
+  rlca
+  add a,88
+  ld h,a
+  ld a,e
+  and 56
+  rlca
+  rlca
+  ld l,a
+  ld a,(ix+10)
+  rrca
+  rrca
+  rrca
+  and 31
+  or l
+  ld l,a
+  ret
+#endasm
+}
+#endif
+
 /**
  * screen_init() - Set up the screen
  */
@@ -136,6 +263,15 @@ void screen_char_draw(padPt* Coord, unsigned char* ch, unsigned char count)
       for (j=0;j<FONT_SIZE_Y;++j)
   	{
   	  b=*p;
+
+#if defined(__MBEL__) && !defined(MBEL_SLOW_TEXT)
+          if (FONT_SIZE_X==4 && x+FONT_SIZE_X<256 && y<191) {
+            text_row(x,y,(unsigned char)b & 240,mainColor);
+            ++y;
+            ++p;
+            continue;
+          }
+#endif
 	  
   	  for (k=0;k<FONT_SIZE_X;++k)
   	    {

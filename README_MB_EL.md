@@ -132,3 +132,27 @@ parameters instead of floating-point frequency conversion. The compiled
 bell returns in a Z80 execution test; network adapter tests pass on both
 simulated platforms. Real hardware retest is pending. HGFX alpha 2 TAPs
 are unchanged.
+
+## Alpha 4: faster ordinary ZX text
+
+`runable/PLATOTerm_MB_EL_alpha4.tap` writes FastText glyph rows directly
+to the bitmap in Z80 assembly, merging up to two bytes per row. This keeps
+the original set-pixel behavior for all four modes, including original
+attribute writes. Other font widths and edge coordinates use the original
+path. Rotated/bold/non-FastText rendering is unchanged. No clock or network
+settings are changed. The alpha 3 startup sound fix is retained.
+
+A compiled-Z80 comparison against alpha 3 covers 768 cases across all four
+modes, M0–M3, custom glyphs, pixel alignments and edge fallbacks, comparing
+all 6912 bitmap/attribute bytes. The tested text cases take approximately
+1.8 times fewer cycles; this is a renderer benchmark, not an end-to-end
+network speed claim. Keyboard polling is stubbed identically in both builds.
+Linked BIOS/ESP tests pass on both simulated platforms; hardware retest
+is pending. Existing HGFX TAPs are unchanged.
+
+To reproduce the renderer comparison (requires `z80==1.2.0`), save the
+alpha 3 linked binary/map before building alpha 4, then run:
+
+```sh
+python3 tests/test_zx_text_z80.py /path/to/alpha3.bin /path/to/alpha3.map
+```
