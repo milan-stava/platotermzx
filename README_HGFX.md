@@ -200,3 +200,21 @@ Tests now cover that production splash path and a clear-cycle bound, plus
 rectangle byte boundaries and clipping. Network/exit regression tests pass.
 The reported black screen on real IRATA still needs hardware confirmation.
 Keep graphics fill off initially as in alpha 8.
+
+## HGFX3 alpha 10: write-only planar fills
+
+`runable/PLATOTerm_MB_EL_HGFX3_alpha10.tap` replaces every HGFX3 planar
+memset in startup clear, screen clear and rectangle spans with explicit
+volatile stores. No destination read/LDIR is used. The planar aperture
+is a write interface; reads can return underlying ZX bitmap RAM instead
+of the data just sent to HGFX. Alpha 9's memset optimization incorrectly
+assumed a normal read/write RAM destination.
+
+The updated hardware model does not mirror planar stores into underlying
+ZX RAM. Alpha 9 then reproducibly fails a full-width rectangle check.
+Alpha 10 passes geometry, palette, text, offline demo, full production
+splash/ready, span clipping and return tests with that model, and asserts
+zero reads from the planar destination. Clear takes 3,936,960 simulated
+cycles (about 0.197 seconds at 20 MHz without waits). Network tests pass.
+Real hardware retest is required; this is not a confirmed IRATA fix.
+Use T first, then connect with graphics fill disabled.

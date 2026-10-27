@@ -25,6 +25,7 @@ class Hardware:
         self.selector = 0
         self.mapped = False
         self.transactions = 0
+        self.planar_reads = 0
         target = f"platoterm-hgfx{kind}"
         build = ROOT / f"build-HGFX{kind}"
         self.syms = {name: int(value,16) for name,value in re.findall(
@@ -35,7 +36,7 @@ class Hardware:
         origin = self.syms["CRT_ORG_CODE"]
         m.memory[origin:origin+len(image)] = image
         m.mark_addrs(0, 0x4000, m.READ_MARK | m.WRITE_MARK)
-        m.mark_addrs(0x4000, 0x2000, m.WRITE_MARK)
+        m.mark_addrs(0x4000, 0x2000, m.READ_MARK | m.WRITE_MARK)
         m.set_read_callback(self.read)
         m.set_write_callback(self.write)
         m.set_input_callback(self.input)
@@ -47,6 +48,8 @@ class Hardware:
         return int.from_bytes(self.m.memory[address:address+2], "little")
 
     def read(self, address):
+        if self.kind == 3 and self.regs[1] == 5 and not (self.regs[0x20] & 128) and 0x4000 <= address < 0x4040:
+            self.planar_reads += 1
         if address < 0x4000 and self.mapped:
             assert not self.m.iff1, "interrupts enabled with ROM paged out"
             y = self.word(0x000b if self.kind == 3 else 0x580b)
@@ -59,7 +62,9 @@ class Hardware:
             y = self.word(0x0007 if self.kind == 3 else 0x5807)
             self.frame[y*self.stride+address] = value
         else:
-            self.m.memory[address] = value
+            planar_write = self.kind == 3 and self.regs[1] == 5 and not (self.regs[0x20] & 128) and 0x4000 <= address < 0x6000
+            if not planar_write:
+                self.m.memory[address] = value
             base = 0x2000 if self.kind == 3 else 0x5900
             if base <= address < base+len(self.palette) and not (self.regs[0x20] & 128):
                 self.palette[address-base] = value
@@ -196,7 +201,7 @@ for kind in (3, 5):
 h = Hardware(3,False)
 h.call('_hgfx_start')
 h.call('_screen_clear')
-assert h.last_cycles < 3000000, h.last_cycles
+assert h.last_cycles < 6000000, h.last_cycles
 print('PASS: HGFX3 full clear cycles:',h.last_cycles)
 h.call('_terminal_init')
 splash_count=len(re.findall(r'0[xX][0-9a-fA-F]+',(ROOT/'src/spectrum/splash.h').read_text()))
@@ -210,4 +215,5 @@ for x1,x2 in ((0,0),(0,511),(1,6),(3,13),(7,8),(8,23),(-5,12),(500,520)):
     h.call('_screen_block_draw',0x5e00,0x5e04)
     for x in range(512):
         assert h.point(x,42)==int(max(0,x1)<=x<=min(511,x2)),(x1,x2,x)
-print('PASS: HGFX3 production splash/ready and planar spans/clipping')
+assert h.planar_reads==0,h.planar_reads
+print('PASS: HGFX3 production splash/ready and planar spans/clipping; no destination reads')

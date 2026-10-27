@@ -47,6 +47,17 @@ static unsigned char used[HGFX_COLOURS], ink = 1, paper;
 static unsigned int seeds_x[SPAN_LIMIT], seeds_y[SPAN_LIMIT];
 static unsigned int seed_count;
 
+#if defined(__HGFX3__) && !defined(HGFX_HOST_TEST)
+/* The planar aperture is a write interface; reads see underlying ZX RAM.
+ * Never use LDIR/memset here: copying a previous store back can read stale
+ * bitmap data instead of 255. Volatile stores emit no destination reads. */
+static void planar_fill(unsigned int offset, unsigned int count)
+{
+    volatile unsigned char *p = PIXELS + offset;
+    while (count--) *p++ = 255;
+}
+#endif
+
 static void configure(void)
 {
     unsigned char i;
@@ -132,7 +143,7 @@ void hgfx_start(void)
         hgfx_map(i);
 #if defined(__HGFX3__) && !defined(HGFX_HOST_TEST)
         REGS[3] = 0;
-        memset((void *)PIXELS, 255, 64);
+        planar_fill(0, 64);
 #else
         memset((void *)PIXELS, 0, HGFX_ROW_BYTES);
 #endif
@@ -240,7 +251,7 @@ static void span(int x1, int x2, int y, unsigned char value)
     if (first == last) PIXELS[first] = left & right;
     else {
         PIXELS[first] = left;
-        if (last > first+1) memset((void *)(PIXELS+first+1), 255, last-first-1);
+        if (last > first+1) planar_fill(first+1, last-first-1);
         PIXELS[last] = right;
     }
 #else
@@ -263,7 +274,7 @@ void screen_clear(void)
     REGS[3] = paper;
     for (y = 0; y < HGFX_HEIGHT; ++y) {
         hgfx_map(y);
-        memset((void *)PIXELS, 255, 64);
+        planar_fill(0, 64);
         hgfx_unmap();
     }
 #else
