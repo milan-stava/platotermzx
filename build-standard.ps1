@@ -33,6 +33,6 @@ if ($Test) {
 $sources=@('font','scale','touch') |
     ForEach-Object { "standard/upstream/$_.c" }
 $sources += 'standard/protocol.c','standard/main.c','standard/screen.c','standard/screen-clear.c','standard/terminal.c','standard/help.c','standard/keyboard.c','standard/keyboard-input.c','standard/keyboard-raw.asm','standard/wifi/io.c','standard/wifi/bios.asm'
-& "$Z88dk/bin/zcc.exe" +zx -vn -O2 -Istandard/upstream -D__MB_WIFI__ -lndos -lm -create-app -m @sources -o build-STD/PLATOTerm12_MB_EL_WIFI_alpha17.bin
+& "$Z88dk/bin/zcc.exe" +zx -vn -O2 -Istandard/upstream -D__MB_WIFI__ -lndos -lm -create-app -m @sources -o build-STD/PLATOTerm12_EL_MB_r1.bin
 if ($LASTEXITCODE -ne 0) { throw 'Standard build failed.' }
-Write-Host 'Built build-STD/PLATOTerm12_MB_EL_WIFI_alpha17.tap'
+Write-Host 'Built build-STD/PLATOTerm12_EL_MB_r1.tap'

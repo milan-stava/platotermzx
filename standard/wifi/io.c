@@ -178,7 +178,7 @@ static void show_error(void)
   hgfx_console();
 #endif
   connection_panel();
-  printf("PLATOTerm 1.2 Wi-Fi alpha 17\nWi-Fi error: %s\nStep: %s\n",error_reason,stage);
+  printf("PLATOTerm 1.2 EL/MB r1\nWi-Fi error: %s\nStep: %s\n",error_reason,stage);
   if (last_response[0]) printf("ESP: %s\n",last_response);
   if (!strncmp(stage,"AT+CIPSTART=",12))
     printf("THE SERVER SEEMS TO BE DOWN,\nCONTACT THE ADMINISTRATOR\n");
@@ -328,7 +328,7 @@ void io_init(void)
 #endif
   mb_install();
   connection_panel();
-  printf("PLATOTerm 1.2 Wi-Fi alpha 17\nWi-Fi BIOS 2.1 - Element / MB03+\n");
+  printf("PLATOTerm 1.2 EL/MB r1\nWi-Fi BIOS 2.1 - Element / MB03+\n");
   printf("Wi-Fi for Element / MB03+.\n");
   printf("Filled-in graphics? Y/N [Y]: ");
   do { c=getch(); } while(c!='y' && c!='Y' && c!='n' && c!='N' && c!=13 && c!=10);

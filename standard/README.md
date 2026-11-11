@@ -1,6 +1,10 @@
 # Standardni PLATOTerm 1.2 pro Element / MB03+
 
-Aktualni sestaveni: **alpha 17**, standardni ZX grafika 256 x 192.
+Aktualni vydani: **PLATOTerm 1.2 pro Element / MB03+**, revize **r1**,
+standardni ZX grafika 256 x 192. Git tag: `v1.2-elmb-r1`.
+Jde o schvalenou alpha 17 s novym oznacenim vydani; funkce se nemeni.
+Oznaceni 1.2 zachovava verzi puvodniho PLATOTermu, r1 je prvni vydani
+upravy pro Element / MB03+. HGFX bude samostatna varianta.
 Zaklad je PLATOTERMZX_1_2 (tschak909/platotermzx),
 commit `4250f74281931aa3cd3b77ef854dff122c8e842c`.
 Originalni soubory v `upstream/` jsou zachovane beze zmen.
@@ -51,7 +55,7 @@ transakce. Opakovany EXTEND zustava lokalni a napoveda funguje i v TTY rezimu.
 Spustit `./build-standard.ps1`; testy `./build-standard.ps1 -Test`.
 Dalsi kontrola: `powershell -NoProfile -ExecutionPolicy Bypass -File tests/bios-bridge.ps1`.
 
-Vznikne `build-STD/PLATOTerm12_MB_EL_WIFI_alpha17.tap`. Starsi sestaveni
+Vznikne `build-STD/PLATOTerm12_EL_MB_r1.tap`. Starsi sestaveni
 zustavaji pro porovnani. Z88dk lze zadat pomoci parametru -Z88dk.
 
 ## Pouziti

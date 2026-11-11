@@ -1,8 +1,9 @@
 # PLATOTerm pro eLeMeNt ZX / MB03+
 
-**Aktuální práce: standardní ZX verze PLATOTerm 1.2 s Wi-Fi BIOSem 2.1.**
+**Vydání: PLATOTerm 1.2 pro Element / MB03+, revize r1, s Wi-Fi BIOSem 2.1.**
+Git tag: `v1.2-elmb-r1`. Vychází ze schválené alpha17; HGFX je samostatná varianta.
 Sestavení: `./build-standard.ps1`. Výstup je
-`build-STD/PLATOTerm12_MB_EL_WIFI_alpha17.tap`.
+`build-STD/PLATOTerm12_EL_MB_r1.tap`.
 Podrobnosti jsou v [návodu standardní varianty](standard/README.md).
 Dosavadní HGFX projekt níže zůstává zachován pro pozdější pokračování.
 

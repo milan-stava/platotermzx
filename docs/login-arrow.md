@@ -19,7 +19,8 @@ Submitting guest as the group moves directly to the guest menu; this does not
 reproduce a private account's password screen, so no claim is made that the
 second transition was captured with a private account. No private credentials
 were used or captured. No change to production rendering is needed to keep an
-arrow that the server deliberately removes. Alpha17 remains the current TAP.
+arrow that the server deliberately removes. Alpha17 was approved and released
+as PLATOTerm 1.2 EL/MB r1 (tag v1.2-elmb-r1), with release naming changes only.
 
 The earlier alpha17 rectangle fixes are valid but were not the cause of the
 reported disappearing arrow. Do not introduce a special case that ignores

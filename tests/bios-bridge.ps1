@@ -1,5 +1,5 @@
 param([string]$BiosTestScript='D:/zx/projekty/wifi/Wifi Bios/ver21/el-mb/test_bios21.ps1',
-      [string]$BuildStem='PLATOTerm12_MB_EL_WIFI_alpha17')
+      [string]$BuildStem='PLATOTerm12_EL_MB_r1')
 $ErrorActionPreference='Stop'
 # Reuse the user's BIOS instruction-level test CPU; no edits to that project.
 $source=[IO.File]::ReadAllText($BiosTestScript)
