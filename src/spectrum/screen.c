@@ -1,4 +1,4 @@
-#ifdef __SPECTRUM__
+#if defined(__SPECTRUM__) && !defined(__HGFX__)
 
 #include <graphics.h>
 #include <sound.h>

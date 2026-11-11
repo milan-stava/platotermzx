@@ -24,6 +24,20 @@ void main(void)
   bpoke(0x5C3B, bpeek(0x5C3B) | 0x8); /*Alistair's workaround to autoboot key mode issue */
   char c; 
   zx_border(INK_BLACK);  //Tidy up the borders on start up
+#ifdef __HGFX__
+  /* All connection prompts use the ULA console before HGFX interception. */
+  hgfx_console();
+  io_init();
+  screen_init();
+  terminal_init();
+  ShowPLATO(splash,sizeof(splash));
+  terminal_initial_position();
+  enable_fill=0;
+  for (;;) {
+    keyboard_main();
+    io_main();
+  }
+#else
   screen_init();
   terminal_init();
   ShowPLATO(splash,sizeof(splash));
@@ -76,6 +90,7 @@ void main(void)
       
       io_main();
     }
+#endif
 }
 
 #endif /* __SPECTRUM__ */

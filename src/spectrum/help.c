@@ -4,6 +4,9 @@
 #include "ctype.h"
 #endif
 #include "help.h"
+#ifdef __HGFX__
+#include "../include/screen.h"
+#endif
 
 #define ENTRY_LENGTH 20
 
@@ -12,6 +15,9 @@
  */
 void help_clear(void)
 {
+#ifdef __HGFX__
+  hgfx_console();
+#endif
 #ifdef __SPECTRUM__
   gotoxy(1,22);
   textcolor(WHITE);
@@ -84,6 +90,9 @@ void help_matches(char* entry, const char* match)
  */
 void help_run(void)
 {
+#ifdef __HGFX__
+  hgfx_console();
+#endif
 #ifdef __SPECTRUM__
   char help_done=1;
   char entry[ENTRY_LENGTH];

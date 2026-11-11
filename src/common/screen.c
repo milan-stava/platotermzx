@@ -21,6 +21,8 @@ extern unsigned char FONT_SIZE_Y;
 
 char enable_fill;
 
+#ifndef __HGFX__
+
 void bx(int x1, int y1, int x2, int y2)
 {
   int y=0;
@@ -78,6 +80,8 @@ void screen_line_draw(padPt* Coord1, padPt* Coord2)
     draw(scalex[Coord1->x],scaley[Coord1->y],scalex[Coord2->x],scaley[Coord2->y]);
 }
 
+#endif /* !__HGFX__ */
+
 /**
  * screen_tty_char - Called to plot chars when in tty mode
  */
@@ -119,7 +123,7 @@ void screen_tty_char(padByte theChar)
  */
 void screen_paint(padPt* Coord)
 {
-#ifndef NO_FILL
+#if !defined(NO_FILL) && !defined(__HGFX__)
   if (enable_fill) 
     fill(scalex[Coord->x],scaley[Coord->y]);
 #endif
@@ -130,4 +134,7 @@ void screen_paint(padPt* Coord)
  */
 void screen_done(void)
 {
+#ifdef __HGFX__
+  hgfx_console();
+#endif
 }

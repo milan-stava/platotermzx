@@ -1,0 +1,152 @@
+{
+    "upstream_files":  [
+                           {
+                               "sha256":  "788CCEC38D8E10EE7540125BB119ED7BE71B4D6FA40925DF6869391C1BA7D1E4",
+                               "path":  "standard/upstream/connect.c"
+                           },
+                           {
+                               "sha256":  "4335919D9BB1C58409F39D02D44D2A33DB4AA601CF0D567637D35C6226FCD20F",
+                               "path":  "standard/upstream/connect.h"
+                           },
+                           {
+                               "sha256":  "088AA3AEEF7CFC7A9B4B0AAD0E6CEE1EF2647B5A476EF4460D47EC8ABDD7874C",
+                               "path":  "standard/upstream/cursor_sprite.h"
+                           },
+                           {
+                               "sha256":  "DE29544A73442AD24617A9E7A6DF9862A6CAB9C702EA6DFB1B337FCA81DB853A",
+                               "path":  "standard/upstream/font.c"
+                           },
+                           {
+                               "sha256":  "82BD67B7301CEE3B4174D84A4C02B36FE57464217A07ACFFC388EAD3FFABC8B2",
+                               "path":  "standard/upstream/help.c"
+                           },
+                           {
+                               "sha256":  "675D1412BAD5FCB98BD2A367AAC3751D8274160BF7B8CAB170E07CD98E1E45BA",
+                               "path":  "standard/upstream/help.h"
+                           },
+                           {
+                               "sha256":  "0279B7BDCA35F5410E21B35AFF32FA81A37BC5C7694972F9447DB86E744C955F",
+                               "path":  "standard/upstream/io.c"
+                           },
+                           {
+                               "sha256":  "18C2FC401DB068465FA018B935218C38605345615FCCB17A100D8B592F1D22CC",
+                               "path":  "standard/upstream/io.h"
+                           },
+                           {
+                               "sha256":  "404939DACE8228D243F5E57DACCFD556CF6E9870291077338C58688820FFB244",
+                               "path":  "standard/upstream/key.h"
+                           },
+                           {
+                               "sha256":  "AFA21674D7C99931A3C1C572A268784BE69EACFD6A7F43E5EC7BB7EA19CDAB49",
+                               "path":  "standard/upstream/keyboard.c"
+                           },
+                           {
+                               "sha256":  "C842ADB815C4C57F5391568AA9A4DD506789772DA2EA7232D496749D8E6CFADA",
+                               "path":  "standard/upstream/keyboard.h"
+                           },
+                           {
+                               "sha256":  "C172859FB0E89B7659114A3BBD0E737F2A5C48E3E15132DDF9A0A390591EF4FB",
+                               "path":  "standard/upstream/main.c"
+                           },
+                           {
+                               "sha256":  "457140C71F5C20656359B0008904C179522ECE1FC72853D5A31570A2B58E9A36",
+                               "path":  "standard/upstream/plato_key.h"
+                           },
+                           {
+                               "sha256":  "7EF263315F4ADC81F79FAF18890FCA96F7F6B6BDC3DFDFCE820E7CF45FAF6C66",
+                               "path":  "standard/upstream/protocol.c"
+                           },
+                           {
+                               "sha256":  "45B5C981CC266EF3CF1186B5641F5E121870C8B35F441834241D616C3EC2C853",
+                               "path":  "standard/upstream/protocol.h"
+                           },
+                           {
+                               "sha256":  "95AD1942EB600B820888D2E7A466E7C788DDFB9DECA947DF011D51DD68344249",
+                               "path":  "standard/upstream/scale.c"
+                           },
+                           {
+                               "sha256":  "5582A285EACA293AA471FCE1C593F13D94C78F540E970B55521C4A60B25CEE18",
+                               "path":  "standard/upstream/screen.c"
+                           },
+                           {
+                               "sha256":  "721E618E99C7512F8A22F54DA8B383CE5BC738DD2C72E5C721FB75CED4AF0F21",
+                               "path":  "standard/upstream/screen.h"
+                           },
+                           {
+                               "sha256":  "6653435522F2DE299261CEC407F639BA9DF1AB2E9784D6BA28B3695DC7ED8051",
+                               "path":  "standard/upstream/splash.h"
+                           },
+                           {
+                               "sha256":  "F21788F1AD3029F0613538ECBD56553119C1942EBE6C92A5104DE87E8360204E",
+                               "path":  "standard/upstream/splash_adam.h"
+                           },
+                           {
+                               "sha256":  "5EF1FE0C3299FA30778E4D34DE04CD5491BBF2D7B8DCD98D34D8EFA06410BA3F",
+                               "path":  "standard/upstream/splash_cpc.h"
+                           },
+                           {
+                               "sha256":  "24E5C8A76E47842DF1807355F52710E600F190ABC0260124EAF0E4356E0BC06C",
+                               "path":  "standard/upstream/splash_einstein.h"
+                           },
+                           {
+                               "sha256":  "E9DAB167621E2A811B951D9F6FB2F2A7253B47D8732FE3FECB10784D9012F9FD",
+                               "path":  "standard/upstream/splash_memotech.h"
+                           },
+                           {
+                               "sha256":  "8976CD7384B86BEC91A9B3A475F4E36EAEFF0B18B514C8EE4A0D13E0D67E44F9",
+                               "path":  "standard/upstream/splash_microbee.h"
+                           },
+                           {
+                               "sha256":  "E9DAB167621E2A811B951D9F6FB2F2A7253B47D8732FE3FECB10784D9012F9FD",
+                               "path":  "standard/upstream/splash_msx.h"
+                           },
+                           {
+                               "sha256":  "42F3AF68A5D8F6BCEEA8EF46127FBB83D6F9BE3C091FA52770E26501F098D8C9",
+                               "path":  "standard/upstream/splash_spectrum.h"
+                           },
+                           {
+                               "sha256":  "6080349C696C3BA3F48C3C05553F17FF7CED4DC5206FA63A40A94A316C494335",
+                               "path":  "standard/upstream/splash_svi.h"
+                           },
+                           {
+                               "sha256":  "570654E74FC5D84F660CED30E75722120B29B4ACD1904A1C72C472D6D5CB8B4E",
+                               "path":  "standard/upstream/terminal.c"
+                           },
+                           {
+                               "sha256":  "7AB46A1A17EF387954FAD566D675DEDB3856FC094F64133C863E2B0204FFDDFD",
+                               "path":  "standard/upstream/terminal.h"
+                           },
+                           {
+                               "sha256":  "062322707CFD7840B1D6B323441502F143B2AE20D703D9C742F92F2DC7109682",
+                               "path":  "standard/upstream/touch.c"
+                           },
+                           {
+                               "sha256":  "95A117A9295445F1497559D1DDB07217663AE112197A7EEB30711334D0C4037D",
+                               "path":  "standard/upstream/touch.h"
+                           }
+                       ],
+    "upstream_tag":  "PLATOTERMZX_1_2",
+    "upstream_commit":  "4250f74281931aa3cd3b77ef854dff122c8e842c",
+    "hgfx_preserved":  [
+                           {
+                               "sha256":  "49EDF21813079EC29BD6D634D1F751366767A071FF97841B72CE36E3372422C7",
+                               "path":  "src/spectrum/hgfx.c"
+                           },
+                           {
+                               "sha256":  "838D3E4E508C633C7CF11C8CE3F782786CC30D8461A5A0AC60A18C28990EE111",
+                               "path":  "src/spectrum/mb/io.c"
+                           },
+                           {
+                               "sha256":  "18AF73C4167427804B434CBA76BAF27A62E01F1043FE520C176E27D34F0381F8",
+                               "path":  "src/spectrum/mb/bios.asm"
+                           },
+                           {
+                               "sha256":  "71E828F70D2A8C3D8CC6589F50988A629B2FFC3EE33C278D7A4B48A6E38EE0EC",
+                               "path":  "src/spectrum/mb/WifiBios21_MB_EL.cod"
+                           },
+                           {
+                               "sha256":  "5647DC797A626CD643E4B69DE0047D1940B751808CC919DC6ABE9EEBCAF58971",
+                               "path":  "build-hgfx.ps1"
+                           }
+                       ]
+}

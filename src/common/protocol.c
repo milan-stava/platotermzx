@@ -14,6 +14,9 @@
 
 #include <stdbool.h>
 #include "../include/protocol.h"
+#ifdef __SPECTRUM__
+#include "../include/keyboard.h"
+#endif
 
 #define	BSIZE	64
 

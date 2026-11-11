@@ -1,0 +1,6 @@
+.tools/
+build-HGFX/
+build-STD/
+*.o
+*.err
+

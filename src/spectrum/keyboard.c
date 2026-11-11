@@ -64,7 +64,7 @@ void keyboard_out(unsigned char platoKey)
  */
 void keyboard_out_tty(char ch)
 {
-  if (ch=0x0a)
+  if (ch==0x0a)
     {
       io_send_byte(0x0d);
       io_send_byte(0x0a);
@@ -99,6 +99,9 @@ void keyboard_main(void)
       {
         is_extend=0;
         help_run();
+#ifdef __HGFX__
+        hgfx_resume();
+#endif
       }
       else if (is_extend==1 && ch==0x39)
       {

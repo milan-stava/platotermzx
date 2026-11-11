@@ -12,6 +12,13 @@
 
 #include "protocol.h"
 
+#ifdef __HGFX__
+void hgfx_console(void);
+void hgfx_resume(void);
+extern unsigned char hgfx_user_font[128][16];
+void hgfx_char_load(padWord charnum, charData data);
+#endif
+
 extern char enable_fill;
 
 /**
