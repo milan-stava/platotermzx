@@ -17,6 +17,13 @@
 #include "../upstream/keyboard.h"
 #include "../upstream/terminal.h"
 #include "../screen-clear.h"
+#ifdef __HGFX__
+extern void hgfx_console(void);
+extern void hgfx_set_fill(unsigned char enabled);
+#ifdef HGFX_RX_TRACE
+extern unsigned char hgfx_user_font[128][16];
+#endif
+#endif
 
 extern void mb_install(void);
 extern int mb_baud(unsigned char index) __z88dk_fastcall;
@@ -26,7 +33,15 @@ extern unsigned int mb_read_block(void *buffer,unsigned int count);
 extern int mb_write(unsigned char byte) __z88dk_fastcall;
 char io_initialized=0;
 unsigned char standard_enable_fill=1;
+#if defined(__PAL__) || (defined(LAT_TEST) && defined(TRANSPARENT_TEST))
+/* PAL uses the free 512 bytes as stack headroom for its seed-fill code. The
+ * BIOS receive loop already slices every request to at most 256 bytes.
+ * Latency + transparent test build: 512 B to fit below E800h (the passive
+ * receive serves only the first server blocks there). */
+static unsigned char payload[512];
+#else
 static unsigned char payload[1024];
+#endif
 static char line[100];
 static unsigned char connected=0;
 static void mark_connected(void)
@@ -43,18 +58,71 @@ static unsigned int available_bytes;
 static unsigned char length_ready;
 static unsigned char server_output_started;
 static unsigned char tx_queue[64], tx_count, tx_overflow;
-static unsigned int keyboard_tick;
 static unsigned int rx_slice=128;
 static unsigned int now(void);
 
+#ifdef HGFX_RX_TRACE
+/* Alpha41 v3 diagnostic: capture the reply following ENTER in the existing
+ * 2 KB downloadable-font store. GAMES uses M0, so this does not affect its
+ * renderer and, unlike 4000h, cannot touch the active HGFX write aperture. */
+#define RX_TRACE_BASE ((volatile unsigned char *)hgfx_user_font)
+#define RX_TRACE_CAPACITY 2040U
+static void rx_trace_reset(void)
+{
+  RX_TRACE_BASE[0]='R';RX_TRACE_BASE[1]='X';
+  RX_TRACE_BASE[2]='4';RX_TRACE_BASE[3]='3';
+  RX_TRACE_BASE[4]=0;RX_TRACE_BASE[5]=0;
+  RX_TRACE_BASE[6]=0;RX_TRACE_BASE[7]=0;
+}
+static void rx_trace(const unsigned char *data,unsigned int count)
+{
+  unsigned int pos;
+  volatile unsigned char *dst;
+  if(RX_TRACE_BASE[0]!='R' || RX_TRACE_BASE[1]!='X' ||
+     RX_TRACE_BASE[2]!='4' || RX_TRACE_BASE[3]!='3')return;
+  pos=(unsigned int)RX_TRACE_BASE[4]|((unsigned int)RX_TRACE_BASE[5]<<8);
+  if(pos>=RX_TRACE_CAPACITY)return;
+  dst=RX_TRACE_BASE+8;
+  dst+=pos;
+  while(count-- && pos<RX_TRACE_CAPACITY) {
+    *dst=*data++;
+    ++dst;
+    ++pos;
+  }
+  RX_TRACE_BASE[4]=(unsigned char)pos;
+  RX_TRACE_BASE[5]=(unsigned char)(pos>>8);
+  if(pos==RX_TRACE_CAPACITY)RX_TRACE_BASE[6]=1;
+}
+#endif
+
 static void service_keyboard(void)
 {
-  unsigned int tick;
   if (!connected) return;
-  tick=now();
-  if (tick==keyboard_tick) return;
-  keyboard_tick=tick;
+  /* Do not throttle release detection to 50 Hz.  standard_getkey() itself
+   * times held-key repeats with FRAMES, but frequent scans let a quick
+   * release and second physical press register as two immediate strokes. */
   keyboard_main(); /* only queues bytes; never starts an AT transaction */
+}
+
+/* Scan promptly before a blocking ESP query.  standard_getkey() times held
+ * repeats in 50 Hz frames, so this burst can detect a new press immediately
+ * but cannot manufacture multiple repeats in one frame. */
+static void scan_keyboard_burst(void)
+{
+  unsigned char i;
+  extern unsigned char keyboard_scan_event;
+  /* The outer loop may already have consumed this physical press. */
+  if(keyboard_scan_event) {
+    keyboard_scan_event=0;
+    return;
+  }
+  for(i=0;i<30;++i) {
+    keyboard_main();
+    if(keyboard_scan_event) {
+      keyboard_scan_event=0;
+      break;
+    }
+  }
 }
 
 static void connection_panel(void)
@@ -178,7 +246,13 @@ static void show_error(void)
   hgfx_console();
 #endif
   connection_panel();
+#if defined(__PAL__)
+  printf("PLATOTerm PAL alpha21\nWi-Fi error: %s\nStep: %s\n",error_reason,stage);
+#elif defined(__HGFX__)
+  printf("Wi-Fi error: %s\nStep: %s\n",error_reason,stage);
+#else
   printf("PLATOTerm 1.2 EL/MB r1\nWi-Fi error: %s\nStep: %s\n",error_reason,stage);
+#endif
   if (last_response[0]) printf("ESP: %s\n",last_response);
   if (!strncmp(stage,"AT+CIPSTART=",12))
     printf("THE SERVER SEEMS TO BE DOWN,\nCONTACT THE ADMINISTRATOR\n");
@@ -190,9 +264,10 @@ static void failure(void)
   extern void io_test_failure(void);
   io_test_failure();
 #else
+  extern void reconnect_restart(void);
   show_error();
-  printf("Restart PLATOTerm to reconnect.\n");
-  for (;;) ;
+  printf("Press a key to reconnect PLATOTerm.\n");
+  reconnect_restart();
 #endif
 }
 
@@ -217,7 +292,7 @@ static int probe_current_uart(void)
 static int prepare_connection(void)
 {
   if (!probe_current_uart() || !command("ATE0\r\n",100)) return 0;
-  /* Same command order as the supplied working MB/EL alpha6 TAP.
+  /* Same command order as the supplied working MB/EL alpha7 TAP.
    * Closing an absent connection may return ERROR; consume and ignore it. */
   command("AT+CIPCLOSE=5\r\n",100);
   command("AT+CIPCLOSE\r\n",100);
@@ -290,7 +365,11 @@ static void select_server(char *host)
   int key;
   for (;;) {
 #ifndef HGFX_IO_TEST
+#if defined(__HGFX__) && !defined(__PAL__)
+    gotoxy(0,18);                       /* v9p: below the help row and an empty row */
+#else
     gotoxy(0,17);
+#endif
 #endif
     printf("Select server (1/2, ENTER):\n");
     for(row=0;row<2;++row) {
@@ -328,13 +407,53 @@ void io_init(void)
 #endif
   mb_install();
   connection_panel();
+#if defined(__HGFX__) && !defined(__PAL__)
+  printf("Wi-Fi for eLeMeNt ZX / MB03+. Wi-Fi BIOS 1.2, ");   /* UART on the same row (v9p) */
+#elif defined(__PAL__)
+  printf("PLATOTerm PAL native 512x512 alpha21\nWi-Fi BIOS 2.1 - Element / MB03+\n");
+#else
   printf("PLATOTerm 1.2 EL/MB r1\nWi-Fi BIOS 2.1 - Element / MB03+\n");
+#endif
+#if !(defined(__HGFX__) && !defined(__PAL__))
   printf("Wi-Fi for Element / MB03+.\n");
+#endif
+#ifdef __HGFX__
+  {
+    static const char *rates[]={"2400","4800","9600","19200","31250","38400",
+      "57600","115200","230400","460800","576000","921600","1152000",
+      "1500000","2000000","2304000","3456000","4608000","5760000",
+      "6912000","8064000","9216000","10368000","11520000"};
+    c=mb_current_baud();
+    if(c>=0 && c<24) printf("UART: %s Bd\n",rates[c]);
+    else printf("UART: unknown\n");
+  }
+#endif
+#if defined(__HGFX__) && !defined(__PAL__)
+  {
+    extern unsigned char display_choice(void); /* combined display/fill selector */
+    standard_enable_fill=display_choice();
+    hgfx_set_fill(standard_enable_fill);
+  }
+#else
   printf("Filled-in graphics? Y/N [Y]: ");
-  do { c=getch(); } while(c!='y' && c!='Y' && c!='n' && c!='N' && c!=13 && c!=10);
+  {
+    extern int setup_fill_getch(void);
+    do { c=setup_fill_getch(); }
+    while(c!='y' && c!='Y' && c!='n' && c!='N' && c!=13 && c!=10);
+  }
   standard_enable_fill=1;
   if(c=='n' || c=='N') standard_enable_fill=0;
+#ifdef __HGFX__
+  {
+    extern void hgfx_set_fill(unsigned char enabled);
+    hgfx_set_fill(standard_enable_fill);
+  }
+#endif
   printf(standard_enable_fill?"Yes\n":"No\n");
+#endif
+#if defined(__HGFX__) && !defined(__PAL__)
+  printf("For help press EXTEND (CS+SS), then 0.\n\n");   /* v9p, v9y (CS+SS), then an empty row */
+#endif
   release_setup_key();
   in_Pause(1500);
   select_server(host);
@@ -394,6 +513,21 @@ void io_init(void)
 void io_send_byte(unsigned char b)
 {
   if (!connected) return;
+#ifdef TRANSPARENT_TEST
+  {
+    extern unsigned char transparent_active;
+    extern void transparent_send_byte(unsigned char b) __z88dk_fastcall;
+#ifdef LAT_TEST
+    if (transparent_active) { extern void lat_sent(void); transparent_send_byte(b); lat_sent(); return; }
+#else
+    if (transparent_active) { transparent_send_byte(b); return; }
+#endif
+  }
+#endif
+#ifdef HGFX_RX_TRACE
+  /* PKEY_NEXT/ZX ENTER is transmitted as ASCII CR in both PTAT tables. */
+  if(b==0x0d)rx_trace_reset();
+#endif
   if (tx_count>=sizeof(tx_queue)) { tx_overflow=1; return; }
   tx_queue[tx_count++]=b;
 }
@@ -405,6 +539,12 @@ void io_flush(void)
   char request[24];
   int c;
   if (!connected) return;
+#ifdef TRANSPARENT_TEST
+  {
+    extern unsigned char transparent_active;
+    if (transparent_active) return;
+  }
+#endif
   if (tx_overflow) {
     error_reason="keyboard/transmit queue full";
     failure();
@@ -429,6 +569,12 @@ void io_flush(void)
   for(i=0;i<count;++i) {
     if(mb_write(batch[i])) failure();
   }
+  /* Use the original, broadly supported ESP-AT send path and finish this
+   * transaction before another command.  CIPSENDBUF is not reliable on all
+   * Wi-Fi BIOS 2.1 ESP firmwares used by Element/MB03+. */
+#ifdef LAT_TEST
+  { extern void lat_sent(void); lat_sent(); }
+#endif
   if (!result(250)) failure();
 }
 
@@ -440,11 +586,33 @@ void io_main(void)
   char request[28];
   int c;
   if (!connected) return;
+#ifdef TRANSPARENT_TEST
+  {
+    extern unsigned char transparent_active;
+    extern void transparent_io_main(void);
+    if (transparent_active) { transparent_io_main(); return; }
+  }
+#endif
+  /* Give a fresh key the same prompt service as the original C transport,
+   * before starting another blocking ESP query. */
+  scan_keyboard_burst();
   io_flush();
   if (!available_bytes) {
     length_ready=0;
     /* Query once, then drain the advertised backlog in 1 KB blocks. */
+#ifdef LAT_TEST
+    {
+      extern void lat_poll(unsigned int frames) __z88dk_fastcall;
+      unsigned int lt=now();
+      if (!command("AT+CIPRECVLEN?\r\n",100)) failure();
+      lat_poll(now()-lt);
+    }
+#else
     if (!command("AT+CIPRECVLEN?\r\n",100)) failure();
+#endif
+    /* A key may have arrived while ESP answered CIPRECVLEN. Send it before
+     * downloading and rendering a pending screen block. */
+    if (tx_count) io_flush();
     if (!length_ready) {
       error_reason="missing pending TCP length";
       failure();
@@ -488,16 +656,27 @@ void io_main(void)
     service_keyboard();
   }
   if (!result(100)) failure();
+  /* CIPRECVDATA is now fully consumed, so a queued key can safely start a
+   * CIPSEND transaction before the potentially expensive PLATO renderer. */
+  if (tx_count) io_flush();
   if (length && !server_output_started) {
     server_output_started=1;
 #ifndef HGFX_IO_TEST
     /* Remove Wi-Fi/setup messages before the first server banner. */
+#ifndef __HGFX__
     connection_panel();
+#endif
     terminal_initial_position();
 #endif
   }
   if (!length || length>=available_bytes) available_bytes=0;
   else available_bytes-=length;
+#ifdef HGFX_RX_TRACE
+  rx_trace(payload,length);
+#endif
+#ifdef LAT_TEST
+  { extern void lat_rx(void); if (length) lat_rx(); }
+#endif
   for (i=0; i<length; ) {
     requested=length-i;
     if (requested>64) requested=64;
@@ -506,5 +685,18 @@ void io_main(void)
     keyboard_main();
     io_flush();
   }
+#ifdef LAT_TEST
+  { extern void lat_drawn(void); lat_drawn(); }
+#endif
+#ifdef TRANSPARENT_TEST
+  /* Switch only after the first passive server block was rendered and the
+   * length reported by ESP was drained.  This protects the initial screen. */
+  if (server_output_started && !available_bytes) {
+    extern unsigned char transparent_enter(void);
+    stage="AT+CIPMODE=1 / AT+CIPSEND";
+    error_reason="transparent mode rejected or timed out";
+    if (!transparent_enter()) failure();
+  }
+#endif
 }
 #endif

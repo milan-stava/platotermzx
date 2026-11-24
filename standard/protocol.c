@@ -20,28 +20,28 @@
 #define false 0
 #define true 1
 
-static padBool EscFlag;		/* Currently in an escape sequence */
-static Mode PMode,		/* Mode */
+padBool EscFlag;		/* Currently in an escape sequence */
+Mode PMode,		/* Mode */
   CMode;			/* Command */
-static unsigned short SubMode;	/* Block/Line modes */
-static DataType PType,		/* Mode type */
+unsigned short SubMode;	/* Block/Line modes */
+DataType PType,		/* Mode type */
   CType;			/* Current type */
-static unsigned short Phase;		/* Phase of current type */
-static padWord theWord;		/* Data received for various data types */
-static padByte theChar;
-static padByte rawChar;
-static padByte lastChar;
-static padRGB theColor;
-static unsigned short LowX,		/* Previous coordinates received */
+unsigned short Phase;		/* Phase of current type */
+padWord theWord;		/* Data received for various data types */
+padByte theChar;
+padByte rawChar;
+padByte lastChar;
+padRGB theColor;
+unsigned short LowX,		/* Previous coordinates received */
   HiX, LowY, HiY;
-static padPt CurCoord;		/* Current coordinate */
-static padWord Margin;		/* Margin for CR */
-static padWord MemAddr;		/* Load address for program data */
-static unsigned short CharCnt;	/* Current count for loading chars */
-static charData Char;		/* Character data */
-static padByte charBuff[BSIZE];
-static unsigned short charCount;	/* Count of characters currently buffered */
-static padPt charCoord;
+padPt CurCoord;		/* Current coordinate */
+padWord Margin;		/* Margin for CR */
+padWord MemAddr;		/* Load address for program data */
+unsigned short CharCnt;	/* Current count for loading chars */
+charData Char;		/* Character data */
+padByte charBuff[BSIZE];
+unsigned short charCount;	/* Count of characters currently buffered */
+padPt charCoord;
 
 extern unsigned char terminal_get_features(void);
 extern unsigned char terminal_get_type(void);
@@ -55,6 +55,12 @@ extern padByte terminal_ext_in(void);
 extern void screen_wait(void);
 extern void screen_beep(void);
 extern void io_send_byte(unsigned char b);
+#ifdef __HGFX__
+/* v9n: no answers to the host while display 4 replays a page from its record (gfx.c) */
+extern unsigned char rec_play;
+static void pt_send_byte(unsigned char b) { if(!rec_play) io_send_byte(b); }
+#define io_send_byte pt_send_byte
+#endif
 extern void screen_block_draw(padPt* Coord1, padPt* Coord2);
 extern void screen_dot_draw(padPt* Coord);
 extern void screen_line_draw(padPt* Coord1, padPt* Coord2);
@@ -62,6 +68,7 @@ extern void screen_char_draw(padPt* Coord, unsigned char* ch, unsigned char coun
 extern void screen_tty_char(padByte theChar);
 extern void screen_foreground(padRGB* theColor);
 extern void screen_background(padRGB* theColor);
+extern void screen_paint(padPt* Coord);
 extern void terminal_mem_load(padWord addr, padWord value);
 extern void terminal_char_load(padWord charnum, charData theChar);
 extern void terminal_mode_5(padWord value);
@@ -782,21 +789,15 @@ DataChar (void)
     }
 }
 
+/*----------------------------------------------*
+ *	ShowPLATO is in protocol_asm.asm (Z80).	*
+ *	proto_esc: one character in TTY mode or	*
+ *	after ESC (theChar set), unchanged C.	*
+ *----------------------------------------------*/
+
 void
-ShowPLATO (padByte *buff, unsigned short count)
+proto_esc (void)
 {
-  while (count--)
-    {
-      theChar = *buff++;
-      if (lastChar==0xFF && theChar==0xFF)
-	{
-	  // Drop this character, it is an escaped TELNET IAC.
-	  lastChar=0;
-	}
-      else
-	{
-	  rawChar=theChar;
-	  theChar &=0x7F;
 	  if (TTY)
 	    {
 	      if (!EscFlag)
@@ -925,62 +926,6 @@ ShowPLATO (padByte *buff, unsigned short count)
 		  break;
 		}
 	    }
-	  else if (theChar < 0x20)
-	    {
-	      if (charCount > 0)
-		{
-		  screen_char_draw (&charCoord, charBuff, charCount);
-		  charCount = 0;
-		}
-	      switch (theChar)
-		{
-		case 0x00:
-		  screen_wait();
-		case 0x08:
-		  BSx ();
-		  break;
-		case 0x09:
-		  HTx ();
-		  break;
-		case 0x0A:
-		  LFx ();
-		  break;
-		case 0x0B:
-		  VTx ();
-		  break;
-		case 0x0C:
-		  FFx ();
-		  break;
-		case 0x0D:
-		  CRx ();
-		  break;
-		  
-		case 0x19:
-		  SetMode (mBlock, tCoord);
-		  break;
-		case 0x1C:
-		  SetMode (mPoint, tCoord);
-		  break;
-		case 0x1D:
-		  SetMode (mLine, tCoord);
-		  break;
-		case 0x1F:
-		  SetMode (mAlpha, tByte);
-		  break;
-		}
-	    }
-	  else
-	    DataChar ();
-	  
-	  EscFlag = (theChar == 0x1B);
-	  lastChar=rawChar;
-	}
-    }
-  if (charCount > 0)
-    {
-      screen_char_draw (&charCoord, charBuff, charCount);
-      charCount = 0;
-    }
 }
 
 /**

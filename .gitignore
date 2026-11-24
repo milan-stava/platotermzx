@@ -1,6 +1,6 @@
 .tools/
-build-HGFX/
-build-STD/
+build/
 *.o
 *.err
+*.map
 

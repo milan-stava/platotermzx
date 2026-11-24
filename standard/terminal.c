@@ -231,6 +231,10 @@ void terminal_ext_out(padByte value)
  * Keep the original vertical mapping for density and sparse projection.
  * A fixed shift replaces 128 variable shifts; sparse projection is accumulated
  * in the same pass instead of scanning a transposed bitmap a second time. */
+#ifdef __HGFX__
+extern void hgfx_char_load(padWord charnum, charData data);
+void terminal_char_load(padWord charnum, charData data) { hgfx_char_load(charnum,data); }
+#else
 static unsigned char dense_row[16]={0,0,0,5,5,5,10,10,15,15,20,20,20,25,25,25};
 static unsigned char sparse_row[16]={0,0,0,1,1,1,2,2,3,3,4,4,4,5,5,5};
 static unsigned char dense_column[8]={0,0,1,2,2,3,3,4};
@@ -279,6 +283,7 @@ void terminal_char_load(padWord charnum, charData theChar)
 /**
  * terminal_ready() - Show ready
  */
+#endif /* !__HGFX__ */
 void terminal_ready(void)
 {
   TTYLoc.x=TTYLoc.y=0;

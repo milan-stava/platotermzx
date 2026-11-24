@@ -4,6 +4,11 @@ static unsigned char previous;
 static unsigned int pressed_at;
 static unsigned char repeat_delay;
 extern unsigned int standard_raw_key(void);
+/* Keep the intended hold pause before autorepeat.  Once it expires, emit on
+ * every 50 Hz frame.  Any additional visible delay after this point belongs
+ * to the ESP/server transmit path and must not be hidden by shortening this
+ * pause. */
+#define PLATO_REPDEL 20
 static unsigned int input_time(void)
 {
 #ifdef KEYBOARD_INPUT_TEST
@@ -16,7 +21,7 @@ static unsigned int input_time(void)
 void standard_input_reset(void)
 {
   previous=0;
-  repeat_delay=25;
+  repeat_delay=PLATO_REPDEL;
 }
 unsigned char standard_getkey(void)
 {
@@ -31,11 +36,14 @@ unsigned char standard_getkey(void)
   if (key!=previous) {
     previous=key;
     pressed_at=tick;
-    repeat_delay=25;
+    /* A genuinely new press is immediate.  A continuously held key first
+     * waits for the locally shortened, server-latency-compensated pause. */
+    repeat_delay=PLATO_REPDEL;
     return key;
   }
   if ((unsigned int)(tick-pressed_at)<repeat_delay) return 0;
   pressed_at=tick;
-  repeat_delay=4;
+  /* Once autorepeat starts, emit on every video frame (about 20 ms). */
+  repeat_delay=1;
   return key;
 }

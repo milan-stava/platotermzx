@@ -1,106 +1,132 @@
-# PLATOTerm pro eLeMeNt ZX / MB03+
+# PLATOTerm for eLeMeNt ZX / MB03+
 
-**Vydání: PLATOTerm 1.2 pro Element / MB03+, revize r1, s Wi-Fi BIOSem 2.1.**
-Git tag: `v1.2-elmb-r1`. Vychází ze schválené alpha17; HGFX je samostatná varianta.
-Sestavení: `./build-standard.ps1`. Výstup je
-`build-STD/PLATOTerm12_EL_MB_r1.tap`.
-Podrobnosti jsou v [návodu standardní varianty](standard/README.md).
-Dosavadní HGFX projekt níže zůstává zachován pro pozdější pokračování.
+A colour PLATO terminal for eLeMeNt ZX and MB03+ with Wi-Fi BIOS 2.1. A
+single program contains the classic ZX display and three HGFX/FullPAL modes,
+selectable at startup.
 
-První vývojová verze používá HGFX 3, režim 5: **512 × 384 bodů v 16 barvách**.
-Logické souřadnice PLATO zůstávají 512 × 512. X se nemění, Y se převádí
-na `((511-y)*3)/4`. Každý bod má vlastní barvu, bez omezení ZX atributy.
+## Download
 
-Aktuální sestavení je **alpha 4**. Při TCP chybě vypisuje konkrétní krok,
-příčinu a poslední odpověď ESP, namísto společného hlášení o Wi-Fi/overflow.
-Wi-Fi nyní vychází z postupu v dodané funkční `PLATOTerm_MB_EL_alpha6.tap`:
-**rychlost UARTu při startu vůbec nemění**. Běžný text kreslí po řádcích a obdélníky po úsecích až
-256 bodů; tučný a otočený text zatím používá původní pomalejší cestu.
+- **[Download PLATOTerm12_EZXMB.tap](TAP-TAR/PLATOTerm12_EZXMB.tap?raw=1)**
+- **[Download the esxDOS package PTERM12.TAR](TAP-TAR/PTERM12.TAR?raw=1)**
 
-Před příjmem zjišťuje čekající délku přes `AT+CIPRECVLEN?`; u prázdného
-socketu nevolá `CIPRECVDATA`. Inicializační příkazy mají stejné pořadí jako
-ve funkční alpha6. Při chybě připojení lze stisknout R pro opakování nebo W
-pro zadání SSID a hesla. Detaily porovnání jsou v [referenčním záznamu](docs/reference-alpha6.md).
-Tyto změny ještě vyžadují potvrzení na fyzickém Elementu. HGFX backend byl
-při této úpravě zachován beze změn.
+The TAP contains the complete program and all four graphics modules. The TAR
+package is intended for esxDOS and creates a `PTERM12` directory when
+extracted.
 
-## Sestavení ve Windows
+## Display modes
 
-Je potřeba kompletní z88dk. Skript hledá `.tools/z88dk`, potom místní instalaci
-`D:/zx_original/1zx/projekty/z88dk`. Cestu lze zadat explicitně nebo přes
-proměnnou `Z88DK_HOME`. GNU Make ani WSL nejsou potřeba.
+Mode **3 – FullPAL 720×576** and **Filled-in graphics: YES** are selected by
+default. Press `ENTER` to accept both defaults, or use `1`–`4` and `Y`/`N` to
+change them first.
 
-```powershell
-.\build-hgfx.ps1 -Z88dk D:\cesta\k\z88dk
-.\build-hgfx.ps1 -Z88dk D:\cesta\k\z88dk -Demo
-.\build-hgfx.ps1 -Z88dk D:\cesta\k\z88dk -Test
+| Key | Display mode | Colours | Notes |
+|---|---|---:|---|
+| 1 | ZX 256×192 | 2 | classic compatible display |
+| 2 | HGFX 512×384 | 16 | full page with vertical projection |
+| 3 | FullPAL 720×576 | 4 | native 512×512 PLATO canvas, no scaling |
+| 4 | HGFX 512×384, 1:1 | 16 | native page window; scroll with `CS+3` / `CS+4` |
+
+The HGFX and FullPAL text, line and fill renderers are highly optimised in
+assembly and use FDMA for larger transfers. PLATOTerm does not change the CPU
+speed or the configured UART speed.
+
+## Running PLATOTerm
+
+### TAP
+
+Load `PLATOTerm12_EZXMB.tap` and run:
+
+```text
+LOAD ""
 ```
 
-Výstupy:
+### esxDOS
 
-- `build-HGFX/PLATOTerm_MB_EL_HGFX_alpha4.tap`: terminál s Wi-Fi BIOSem 2.1.
-- `build-HGFX/PLATOTerm_HGFX_test_alpha4.tap`: samostatný grafický test bez Wi-Fi.
+Extract `PTERM12.TAR` to the SD card so that it creates a `PTERM12` directory,
+then run `PTERM12.BAS`. The package contains the main program, splash screen,
+and the ZX, HGFX, FullPAL and HGFX 1:1 modules.
 
-Skript vytváří pouze jednu TAPku pro zvolenou variantu, rovnou s číslem verze.
-Starší výstupy zůstávají ve složce pro případ porovnání.
+The ESP must already be connected to Wi-Fi, and the UART must use the same
+speed as the ESP (normally `115200 Bd`). The terminal offers `IRATA.ONLINE`
+and `cyberserv.org` on TCP port 8005. If the server disconnects an idle
+session, press a key to reconnect without reloading PLATOTerm.
 
-V BASICu spustit `LOAD ""`. Nejprve doporučuji grafický test: má zobrazit
-16 barevných pruhů, diagonály přes celou obrazovku, normální, tučný a otočený
-text a uživatelský znak uprostřed. Poslední pruh je bílý, index 8 je šedý.
+## Keys
 
-## Připojení
+- `EXTEND+0` – show PLATO key help, then restore the current screen.
+- `EXTEND+X` – clean exit with BASIC and graphics registers restored.
+- `CS+3` / `CS+4` – move the viewport up/down in HGFX 1:1 mode.
+- `ENTER` – PLATO NEXT.
+- `DELETE` – PLATO ERASE.
 
-Nejprve uložit připojení k AP pomocí Wi-Fi Setup. Terminál použije BIOS 2.1
-pro MB03+/Element, zapne modul a zkusí `AT` při aktuálním nastavení UARTu.
-Rychlost musí být sladěna s modulem, například přes Wi-Fi Setup.
-Nemění rychlost UARTu ani modulu. Host je volitelný,
-výchozí je `IRATA.ONLINE`, TCP port `8005`. Lze zadat také `host:port`.
+Whenever possible, leave the program with `EXTEND+X`. Exiting through NMI may
+leave the HGFX/FDMA registers in a state that requires the computer or SD
+interface to be reinitialised.
 
-Při chybě spojení se nabídne R pro opakování a W pro zadání Wi-Fi přístupu.
-Příkaz `CWJAP_CUR` přihlásí modul pro aktuální běh, neukládá heslo do flash.
-Heslo se při psaní maskuje a diagnostika jej nevypisuje.
+## Gallery
 
-ESP firmware musí podporovat `AT+CIPRECVMODE=1`, `AT+CIPRECVLEN?` a `AT+CIPRECVDATA`.
-Pasivní příjem nechává data čekat v ESP během vykreslování. Terminál zpracuje
-nejvýše 128 bajtů na požadavek, odděluje binární data od odpovědí AT a ověřuje
-délky. Při chybě za běhu nebo přetečení UART se zastaví s hlášením v ZX konzoli;
-obnovení spojení během aktivní relace zatím není implementováno.
+### Startup display selector
 
-## Grafika a současná omezení
+![PLATOTerm startup display selector](Platoterm_start.png)
 
-Podporovány jsou body, čáry, vyplněné obdélníky, mazání, režimy textu WRITE,
-ERASE, REWRITE a INVERSE, otočení a tučné písmo. RGB barvy se převádějí na
-nejbližší položku pevné 16barevné palety. Uživatelské fonty M2/M3 se uchovávají
-jako 8 × 16; vestavěné M0/M1 zatím používají zvětšený původní font 4 × 6.
-Obecná záplavová výplň `screen_paint` je v této verzi vypnutá.
+| HGFX 512×384 | FullPAL 720×576 |
+|---|---|
+| ![HGFX display](hgfx.png) | ![FullPAL display](PAL.png) |
 
-EXTEND 0 přepne do původní ZX nápovědy a po návratu obnoví HGFX obraz i paletu.
-EXTEND 9 zatím používá původní ZX hardcopy; tisk HGFX není implementovaný.
-Budoucí režim 720 × 576 ještě implementovaný není.
+| FullPAL main screen | FullPAL Games |
+|---|---|
+| ![FullPAL main screen](PAL_main.png) | ![FullPAL Games screen](PAL_games.png) |
 
-Grafický backend je v `src/spectrum/hgfx.c`, Wi-Fi samostatně v
-`src/spectrum/mb/`. Původní ZX/ZX-UNO backendy zůstávají dostupné přes své
-Makefily. Wi-Fi backend není závislý na HGFX a je připraven k následnému
-zapojení do verze se standardní ZX grafikou.
+### FullPAL Mahjong
 
-Paměťová okna HGFX: planar aperture `0x4000`, paleta `0x5800`, registry
-`0x5b00`. Kreslení používá cílové offsety a jeden planar bajt, takže nemusí
-držet framebuffer v běžné RAM Z80.
+![FullPAL Mahjong](PAL_Mahjong.png)
 
-## Ověření
+## Known limitation
 
-`-Test` spouští Z80 kód v z88dk-ticks se simulovaným HGFX/ESP rozhraním.
-Kontroluje rozměry a okraje, 9bitové X, všechny barvy, mazání, obdélníky,
-uživatelský text, ořezání otočeného/tučného textu, obnovu palety a binární
-ESP-AT framing včetně limitu délky. Testy neověřují skutečný FPGA core,
-monitor ani fyzické Wi-Fi spojení. TAPy vyžadují ověření na Elementu/MB03+
-nebo v emulátoru s odpovídající podporou HGFX.
+Under a particular colour combination, the **GAMES** menu on IRATA.ONLINE may
+overpaint part of the list or display a yellow rectangle. The official web
+terminal behaves the same way, and the server author confirmed that this is a
+long-standing server menu bug.
 
-## Reference a původ BIOSu
+Characters appear locally after they have been returned by the server. Input
+latency therefore depends on Wi-Fi, the Internet connection and the server;
+PLATOTerm intentionally does not generate local echo.
 
-- [HGFX registry a režimy — Lanex](https://wiki.ilnx.cz/doku.php/hgfx:porty_registry)
-- [Příklad inicializace HGFX — Lanex](https://wiki.ilnx.cz/doku.php/hgfx:prvnigrafika2)
-- `src/spectrum/mb/WifiBios21_MB_EL.a80` a `.cod`: BIOS 2.1 autorů Busy & Hood,
-  převzatý beze změn z místního projektu Wi-Fi Setup `ver18/bios21_MB_EL`.
-  Zdroj zachovává původní popis API i autorství. Volací můstek provede instalaci
-  BIOSu před použitím jeho služeb.
+## Building from source
+
+A complete [z88dk](https://github.com/z88dk/z88dk) installation is required.
+
+Windows PowerShell:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\BUILD.ps1 -Z88dk D:\path\to\z88dk
+```
+
+Linux / shell:
+
+```sh
+Z88DK_HOME=/path/to/z88dk ./build.sh
+```
+
+Release files are written to `TAP-TAR/`. The optional Windows `-BuildTests`
+switch also builds development and latency diagnostics; those files are not
+part of the release.
+
+Detailed development notes are available in
+[POZNAMKY_PRO_PEPU.md](POZNAMKY_PRO_PEPU.md). An HGFX programming reference is
+included in
+[docs/element-programmers-reference.md](docs/element-programmers-reference.md).
+
+## Credits
+
+- Original PLATOTerm ZX: [Thomas Cherryhomes / IRATA.ONLINE](https://github.com/tschak909/platotermzx).
+- Fast HGFX/FullPAL assembly renderers and major performance optimisation:
+  **Pepa “SCJoe” Prokeš**. His work made text, lines and filled graphics fast
+  enough for practical use, including at the original 3.5 MHz CPU speed.
+- Development, eLeMeNt ZX hardware testing and release: **Milan Stava**.
+- Wi-Fi BIOS 2.1 for eLeMeNt ZX / MB03+: **Busy & Hood**.
+- HGFX/FDMA documentation and consultation: the eLeMeNt ZX authors and the Czech ZX community.
+
+PLATOTerm is distributed under the GNU Public License. Original copyright and
+author notices in the source code are preserved.
+

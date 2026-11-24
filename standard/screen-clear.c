@@ -1,18 +1,16 @@
-#include <string.h>
 #include "screen-clear.h"
-/* Character row 23: pixels 184..191, attributes 736..767. */
+/* The text console is in HGFX 2 (gfx/con.asm), not in the ULA memory: the rows are
+ * cleared there. The screen argument (formerly the ULA bitmap 4000h) is not used. */
+extern void con_clear_from(unsigned char row) __z88dk_fastcall;
+/* Character row 23. */
 void standard_clear_last_row(unsigned char *screen)
 {
-  unsigned char band;
-  for(band=0;band<8;++band) memset(screen+0x10e0+((unsigned int)band<<8),0,32);
-  memset(screen+0x1ae0,7,32);
+  (void)screen;
+  con_clear_from(23);
 }
-/* Spectrum bitmap and attributes at screen[0..6911]. Clear pixels y=96..191
- * and attribute rows 12..23, preserving the upper title exactly. */
+/* Character rows 12..23, the upper part (title, display choice) stays. */
 void standard_clear_lower_screen(unsigned char *screen)
 {
-  unsigned char band;
-  for(band=0;band<8;++band) memset(screen+0x880+((unsigned int)band<<8),0,128);
-  memset(screen+0x1000,0,2048);
-  memset(screen+0x1980,7,384);
+  (void)screen;
+  con_clear_from(12);
 }
